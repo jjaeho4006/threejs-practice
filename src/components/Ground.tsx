@@ -1,21 +1,26 @@
-import * as THREE from 'three'
-import floorTexture from "../assets/images/floor.png"
-import {useTexture} from "@react-three/drei";
-import {CuboidCollider, RigidBody} from "@react-three/rapier";
+import {usePlane} from "@react-three/cannon";
+import {groundTexture} from "../assets/images/textures.ts";
+import {useStore} from "../hooks/useStore.ts";
 
 export const Ground = () => {
+    const [ref] = usePlane(() => ({
+        rotation: [-Math.PI / 2,0,0], position: [0,-0.5,0]
+    }))
 
-    const texture = useTexture(floorTexture);
-    texture.wrapS = texture.wrapT = THREE.RepeatWrapping
+    const {addCube} = useStore();
+
+
+    groundTexture.repeat.set(100, 100)
 
     return (
-        <RigidBody type={"fixed"} colliders={false}>
-            <mesh receiveShadow position={[0, 0, 0]} rotation-x={-Math.PI / 2}>
-                <planeGeometry args={[500, 500]} />
-                <meshStandardMaterial color={"gray"} map={texture} map-repeat={[100, 100]}/>
-            </mesh>
-            <CuboidCollider args={[500, 2, 500]} position={[0, -2, 0]}/>
-        </RigidBody>
+        <mesh ref={ref} onClick={(e) => {
+            e.stopPropagation();
+            const [x,y,z] = Object.values(e.point).map(v => Math.ceil(v))
+            addCube(x, y, z)
 
+        }}>
+            <planeGeometry attach="geometry" args={[100,100]} />
+            <meshStandardMaterial attach="material" map={groundTexture} />
+        </mesh>
     )
 }
