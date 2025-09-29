@@ -1,30 +1,18 @@
 import { OrbitControls } from "@react-three/drei";
-import React, { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 import * as THREE from "three";
 import { useThree } from "@react-three/fiber";
 import {DecalItem} from "./DecalItem.tsx";
+import type {DecalDataType, DropDataType} from "../type/type";
 
-export interface DecalData {
-    position: THREE.Vector3;
-    rotation: THREE.Euler;
-    scale: [number, number, number];
-    texture: string;
-}
-
-interface DropData {
-    texture: string;
-    ndcX: number;
-    ndcY: number;
-}
-
-interface MyCylinderProps {
-    newDrop?: DropData;
+interface Props {
+    newDrop?: DropDataType;
     drawMode: boolean;
 }
 
-export const MyCylinder: React.FC<MyCylinderProps> = ({ newDrop, drawMode }) => {
+export const MyCylinder = ({ newDrop, drawMode }: Props) => {
     const cylinderRef = useRef<THREE.Mesh | null>(null);
-    const [decals, setDecals] = useState<DecalData[]>([]);
+    const [decals, setDecals] = useState<DecalDataType[]>([]);
     const { camera } = useThree();
 
     // 새로운 drop 감지
@@ -43,7 +31,7 @@ export const MyCylinder: React.FC<MyCylinderProps> = ({ newDrop, drawMode }) => 
 
             const localPos = cylinderRef.current.worldToLocal(intersect.point.clone());
 
-            const decal: DecalData = {
+            const decal: DecalDataType = {
                 position: localPos,
                 rotation: new THREE.Euler().setFromQuaternion(
                     new THREE.Quaternion().setFromUnitVectors(
