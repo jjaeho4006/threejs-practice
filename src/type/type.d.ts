@@ -5,6 +5,8 @@ export type DecalDataType =  {
     rotation: THREE.Euler;
     scale: [number, number, number];
     texture: string;
+    isTemporary?: boolean
+    path?: THREE.Vector3[];
 }
 
 export type DropDataType = {

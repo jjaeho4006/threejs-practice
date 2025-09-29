@@ -11,17 +11,28 @@ interface DecalItemProps {
 export const DecalItem = ({ decal, meshRef }: DecalItemProps) => {
     const texture = useTexture(decal.texture);
 
-    if (!meshRef.current) {
+    const textureMap = decal.texture ? texture : undefined;
+
+    if (!meshRef.current || !decal) {
         return null;
     }
+
 
     return (
         <Decal
             position={decal.position}
             rotation={decal.rotation}
             scale={decal.scale}
-            map={texture}
+            map={decal.texture ? textureMap : undefined}
             mesh={meshRef as React.RefObject<THREE.Mesh>}
-        />
+        >
+            {!decal.texture && (
+                <meshStandardMaterial
+                    color={0x000000}
+                    transparent
+                    opacity={0.5}
+                />
+            )}
+        </Decal>
     );
 };

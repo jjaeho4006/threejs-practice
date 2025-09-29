@@ -2,17 +2,12 @@ import { Canvas } from "@react-three/fiber";
 import { MyCylinder } from "./components/MyCylinder";
 import { dirtImage, glassImage, grassImage, logImage, woodImage } from "./assets/images/image";
 import React, { useState } from "react";
-
-interface DropData {
-    texture: string;
-    ndcX: number;
-    ndcY: number;
-}
+import type {DropDataType} from "./type/type";
 
 const images = [dirtImage, glassImage, grassImage, logImage, woodImage];
 
 export default function App() {
-    const [newDrop, setNewDrop] = useState<DropData | null>(null);
+    const [newDrop, setNewDrop] = useState<DropDataType | null>(null);
     const [drawMode, setDrawMode] = useState<boolean>(false);
 
     const handleDragStart = (e: React.DragEvent<HTMLImageElement>, src: string) => {
@@ -47,8 +42,7 @@ export default function App() {
                 {drawMode ? "드로잉 중" : "영역 그리기"}
             </button>
 
-            <div
-                style={{
+            <div style={{
                     width: "80%",
                     height: "200px",
                     margin: "0 auto",
