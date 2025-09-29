@@ -19,9 +19,10 @@ interface DropData {
 
 interface MyCylinderProps {
     newDrop?: DropData;
+    drawMode: boolean;
 }
 
-export const MyCylinder: React.FC<MyCylinderProps> = ({ newDrop }) => {
+export const MyCylinder: React.FC<MyCylinderProps> = ({ newDrop, drawMode }) => {
     const cylinderRef = useRef<THREE.Mesh | null>(null);
     const [decals, setDecals] = useState<DecalData[]>([]);
     const { camera } = useThree();
@@ -70,7 +71,7 @@ export const MyCylinder: React.FC<MyCylinderProps> = ({ newDrop }) => {
                 <DecalItem key={idx} decal={d} meshRef={cylinderRef} />
             ))}
 
-            <OrbitControls enableZoom enablePan enableRotate />
+            {!drawMode && <OrbitControls enableZoom enablePan enableRotate />}
         </>
     );
 };
