@@ -13,6 +13,7 @@ const images = [dirtImage, glassImage, grassImage, logImage, woodImage];
 
 export default function App() {
     const [newDrop, setNewDrop] = useState<DropData | null>(null);
+    const [drawMode, setDrawMode] = useState<boolean>(false);
 
     const handleDragStart = (e: React.DragEvent<HTMLImageElement>, src: string) => {
         e.dataTransfer.setData("texture", src);
@@ -21,19 +22,17 @@ export default function App() {
     const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         const texture = e.dataTransfer.getData("texture");
-        if (texture) {
-            const canvas = e.currentTarget.querySelector("canvas")!;
-            const rect = canvas.getBoundingClientRect();
+        if (!texture) return;
 
-            const ndcX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-            const ndcY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+        const canvas = e.currentTarget.querySelector("canvas")!;
+        const rect = canvas.getBoundingClientRect();
 
-            setNewDrop({ texture, ndcX, ndcY });
+        const ndcX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        const ndcY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
-            setTimeout(() => setNewDrop(null), 10);
-        }
+        setNewDrop({ texture, ndcX, ndcY });
+        setTimeout(() => setNewDrop(null), 10);
     };
-
 
     return (
         <div
@@ -41,6 +40,13 @@ export default function App() {
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
         >
+            <button
+                style={{ width: "100px", height: "30px", cursor: "pointer", padding: "5px 15px", margin: "5px auto", backgroundColor: "#fff", border: "1px solid #888" }}
+                onClick={() => setDrawMode(true)}
+            >
+                {drawMode ? "드로잉 중" : "영역 그리기"}
+            </button>
+
             <div
                 style={{
                     width: "80%",

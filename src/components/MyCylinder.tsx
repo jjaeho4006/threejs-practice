@@ -1,7 +1,8 @@
-import { OrbitControls, Decal, useTexture } from "@react-three/drei";
+import { OrbitControls } from "@react-three/drei";
 import React, { useRef, useState, useEffect } from "react";
 import * as THREE from "three";
 import { useThree } from "@react-three/fiber";
+import {DecalItem} from "./DecalItem.tsx";
 
 export interface DecalData {
     position: THREE.Vector3;
@@ -74,23 +75,3 @@ export const MyCylinder: React.FC<MyCylinderProps> = ({ newDrop }) => {
     );
 };
 
-interface DecalItemProps {
-    decal: DecalData;
-    meshRef: React.RefObject<THREE.Mesh | null>;
-}
-
-const DecalItem = ({ decal, meshRef }: DecalItemProps) => {
-    const texture = useTexture(decal.texture);
-
-    if (!meshRef.current) return null;
-
-    return (
-        <Decal
-            position={decal.position}
-            rotation={decal.rotation}
-            scale={decal.scale}
-            map={texture}
-            mesh={meshRef as React.RefObject<THREE.Mesh>}
-        />
-    );
-};
