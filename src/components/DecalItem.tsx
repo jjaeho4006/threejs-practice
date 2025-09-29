@@ -1,17 +1,19 @@
-import type {DecalData} from "./MyCylinder.tsx";
 import React from "react";
 import * as THREE from "three";
 import {Decal, useTexture} from "@react-three/drei";
+import type {DecalDataType} from "../type/type";
 
 interface DecalItemProps {
-    decal: DecalData;
+    decal: DecalDataType;
     meshRef: React.RefObject<THREE.Mesh | null>;
 }
 
 export const DecalItem = ({ decal, meshRef }: DecalItemProps) => {
     const texture = useTexture(decal.texture);
 
-    if (!meshRef.current) return null;
+    if (!meshRef.current) {
+        return null;
+    }
 
     return (
         <Decal
