@@ -42,7 +42,7 @@ export default function App() {
         >
             <button
                 style={{ width: "100px", height: "30px", cursor: "pointer", padding: "5px 15px", margin: "5px auto", backgroundColor: "#fff", border: "1px solid #888" }}
-                onClick={() => setDrawMode(true)}
+                onClick={() => setDrawMode(!drawMode)}
             >
                 {drawMode ? "드로잉 중" : "영역 그리기"}
             </button>
@@ -76,7 +76,10 @@ export default function App() {
                 <Canvas camera={{ position: [0, 0, 250], fov: 40 }}>
                     <ambientLight intensity={0.5} />
                     <pointLight position={[50, 50, 50]} />
-                    <MyCylinder newDrop={newDrop ?? undefined} />
+                    <MyCylinder
+                        newDrop={newDrop ?? undefined}
+                        drawMode={drawMode}
+                    />
                 </Canvas>
             </div>
         </div>
