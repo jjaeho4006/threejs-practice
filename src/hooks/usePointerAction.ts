@@ -1,5 +1,4 @@
 import {type ThreeEvent, useThree} from "@react-three/fiber";
-import type {DecalDataType} from "../type/type";
 import type {Dispatch, RefObject, SetStateAction} from "react";
 import * as THREE from "three";
 
