@@ -1,119 +1,79 @@
-import type {ThreeEvent} from "@react-three/fiber";
+import {type ThreeEvent, useThree} from "@react-three/fiber";
 import type {DecalDataType} from "../type/type";
 import type {Dispatch, RefObject, SetStateAction} from "react";
 import * as THREE from "three";
 
 interface Props{
     drawMode: boolean;
-    currentShape: DecalDataType | null;
-    setCurrentShape: Dispatch<SetStateAction<DecalDataType | null>>;
     drawing: boolean;
-    setDecals: Dispatch<SetStateAction<DecalDataType[]>>;
     setDrawing: Dispatch<SetStateAction<boolean>>;
     cylinderRef: RefObject<THREE.Mesh | null>;
     currentPath: THREE.Vector3[];
     setCurrentPath: Dispatch<SetStateAction<THREE.Vector3[]>>;
+    setSavedLines: Dispatch<SetStateAction<THREE.Vector3[][]>>;
 }
 
-export const usePointerAction = ({drawMode, currentShape, setCurrentShape, drawing, setDecals, setDrawing, cylinderRef, currentPath, setCurrentPath}: Props) => {
+export const usePointerAction = ({drawMode, drawing, setDrawing, cylinderRef, currentPath, setCurrentPath, setSavedLines}: Props) => {
 
-    const isPathClosed = (path: THREE.Vector3[], threshold: number = 2): boolean => {
-        if(path.length < 3){
-            return false;
+    const { camera, gl } = useThree();
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    const getIntersectPoint = (e: PointerEvent):THREE.Vector3 | null => {
+        if(!cylinderRef.current){
+            return null;
         }
-        const first = path[0];
-        const last = path[path.length - 1];
-        return first.distanceTo(last) < threshold;
+
+        const rect = gl.domElement.getBoundingClientRect();
+        mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera)
+        const intersects = raycaster.intersectObject(cylinderRef.current);
+        return intersects.length > 0 ? intersects[0].point.clone() : null;
     }
 
-    const createShapeFromPath = (path: THREE.Vector3[]): THREE.Shape => {
-        const shape = new THREE.Shape();
-        if(path.length === 0){
-            return shape;
-        }
-
-        shape.moveTo(path[0].x, path[0].y);
-
-        for(let i = 1; i < path.length; i ++){
-            shape.lineTo(path[i].x, path[i].y);
-        }
-
-        shape.closePath();
-        return shape;
-    }
-    const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {
-
-        if (!drawMode || !cylinderRef.current) {
-            return;
-        }
-        e.stopPropagation();
-
-        const localPos = cylinderRef.current!.worldToLocal(e.point.clone())
-
-        setCurrentPath([localPos]);
-        setDrawing(true);
-
-        const decal: DecalDataType = {
-            position: localPos,
-            rotation: new THREE.Euler(),
-            scale: [1, 1, 1],
-            texture: '',
-            isTemporary: true
-        }
-
-        setCurrentShape(decal)
-        setDrawing(true);
-    }
-
-    const handlePointerMove  = (e:ThreeEvent<PointerEvent>) => {
-
-        if(!drawing || !drawMode || !cylinderRef.current){
+    const handlePointerDown = (e: ThreeEvent<PointerEvent>):void => {
+        if(!drawMode){
             return;
         }
 
-        const localPos = cylinderRef.current!.worldToLocal(e.point.clone())
-
-        setCurrentPath((prev) => [...prev, localPos]);
-
-        setCurrentShape((prev) => prev ? {...prev, position: localPos} : null);
+        const point = getIntersectPoint(e.nativeEvent);
+        if(point){
+            setDrawing(true)
+            setCurrentPath([point])
+        }
     }
 
-    const handlePointerUp = (e: ThreeEvent<PointerEvent>) => {
-        if (!drawing || !currentShape) {
+    const handlePointerMove = (e: ThreeEvent<PointerEvent>):void => {
+        if(!drawing || !drawMode){
             return;
         }
 
-        if(isPathClosed(currentPath)){
-            const shape = createShapeFromPath(currentPath);
+        const point = getIntersectPoint(e.nativeEvent);
+        if(point){
+            setCurrentPath((prev) => [...prev, point])
+        }
+    }
 
-            const center = new THREE.Vector3();
-            currentPath.forEach((point) => center.add(point));
-            center.divideScalar(currentPath.length);
-
-            let maxDistance = 0;
-            currentPath.forEach((point) => {
-                const distance = center.distanceTo(point);
-                if(distance > maxDistance){
-                    maxDistance = distance;
-                }
-            })
-
-            const finalDecal: DecalDataType = {
-                position: center,
-                rotation: new THREE.Euler(),
-                scale: [maxDistance * 2, maxDistance * 2, 1],
-                texture: '',
-                path: currentPath,
-                isTemporary: false
-            }
-
-            setDecals((prev) => [...prev, finalDecal]);
+    const handlePointerUp = (e: ThreeEvent<PointerEvent>):void => {
+        if(!drawing || !drawMode){
+            return;
         }
 
-        setCurrentPath([])
-        setCurrentShape(null);
         setDrawing(false)
 
+        if(currentPath.length > 1){
+            const first = currentPath[0];
+            const last = currentPath[currentPath.length - 1];
+
+            if(first.distanceTo(last) < 7){
+                const closedPath = [...currentPath];
+                closedPath[closedPath.length - 1] = first.clone();
+
+                setSavedLines((prev) => [...prev, closedPath]);
+            }
+        }
+        setCurrentPath([])
     }
 
     return {handlePointerDown, handlePointerMove, handlePointerUp}

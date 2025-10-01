@@ -1,7 +1,7 @@
-import { OrbitControls } from "@react-three/drei";
+import {Line, OrbitControls} from "@react-three/drei";
 import { useRef, useState, useEffect } from "react";
 import * as THREE from "three";
-import { useThree } from "@react-three/fiber";
+import {type ThreeEvent, useThree} from "@react-three/fiber";
 import {DecalItem} from "./DecalItem.tsx";
 import type {DecalDataType, DropDataType} from "../type/type";
 import {usePointerAction} from "../hooks/usePointerAction.ts";
@@ -14,12 +14,12 @@ interface Props {
 export const MyCylinder = ({ newDrop, drawMode }: Props) => {
     const cylinderRef = useRef<THREE.Mesh | null>(null);
     const [currentPath, setCurrentPath] = useState<THREE.Vector3[]>([]);
+    const [savedLines, setSavedLines] = useState<THREE.Vector3[][]>([]);
     const [decals, setDecals] = useState<DecalDataType[]>([]);
     const [drawing, setDrawing] = useState<boolean>(false);
-    const [currentShape, setCurrentShape] = useState<DecalDataType | null>(null);
     const { camera } = useThree();
 
-    const {handlePointerDown, handlePointerMove, handlePointerUp} = usePointerAction({drawMode, currentShape, setCurrentShape, drawing, setDecals, setDrawing, cylinderRef, currentPath, setCurrentPath});
+    const {handlePointerMove, handlePointerUp, handlePointerDown} = usePointerAction({drawMode, drawing, setDrawing, cylinderRef, currentPath, setCurrentPath, setSavedLines})
 
 
     // 새로운 drop 감지
@@ -70,7 +70,28 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
                 <DecalItem key={idx} decal={d} meshRef={cylinderRef} />
             ))}
 
-            {currentShape && <DecalItem decal={currentShape} meshRef={cylinderRef} />}
+            {currentPath.length > 1 && (
+                <Line
+                    points={currentPath}
+                    color="black"
+                    lineWidth={2}
+                />
+            )}
+
+            {savedLines.map((path, idx) => (
+                <line key={idx}>
+                    <bufferGeometry
+                        attach="geometry"
+                        attributes={{
+                            position: new THREE.Float32BufferAttribute(
+                                path.flatMap((p) => [p.x, p.y, p.z]),
+                                3
+                            ),
+                        }}
+                    />
+                    <lineBasicMaterial color="black" linewidth={3}/>
+                </line>
+            ))}
 
             {!drawMode && <OrbitControls enableZoom enablePan enableRotate />}
         </>
