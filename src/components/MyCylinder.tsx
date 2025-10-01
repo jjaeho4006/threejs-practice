@@ -1,7 +1,7 @@
 import {Line, OrbitControls} from "@react-three/drei";
 import { useRef, useState, useEffect } from "react";
 import * as THREE from "three";
-import {type ThreeEvent, useThree} from "@react-three/fiber";
+import {useThree} from "@react-three/fiber";
 import {DecalItem} from "./DecalItem.tsx";
 import type {DecalDataType, DropDataType} from "../type/type";
 import {usePointerAction} from "../hooks/usePointerAction.ts";
