@@ -12,6 +12,7 @@ interface MaskedDecalProps {
 }
 
 export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecalProps) => {
+    // 폐곡선 중심점 계산
     const getCenterOfPath = (points: THREE.Vector3[]) => {
         const center = new THREE.Vector3();
         points.forEach((p) => center.add(p));
@@ -19,6 +20,7 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
         return center;
     };
 
+    // 폐곡선 최대 지름 계산
     const getMaxDiameter = (points: THREE.Vector3[]) => {
         let maxDistance = 0;
         for (let i = 0; i < points.length; i++) {
@@ -100,7 +102,7 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
         const maskTexture = new THREE.CanvasTexture(canvas);
         maskTexture.needsUpdate = true;
 
-        // 커스텀 셰이더 머티리얼
+        // 커스텀 shader material
         const material = new THREE.ShaderMaterial({
             uniforms: {
                 baseTexture: { value: baseTexture },
