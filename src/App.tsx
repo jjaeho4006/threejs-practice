@@ -51,7 +51,7 @@ export default function App() {
             </div>
 
             <div style={{ flex: 1, width: "100%" }}>
-                <Canvas camera={{ position: [0, 0, 250], fov: 40 }}>
+                <Canvas camera={{ position: [0, 0, 250], fov: 40 }} >
                     <ambientLight intensity={0.5} />
                     <pointLight position={[50, 50, 50]} />
                     <MyCylinder

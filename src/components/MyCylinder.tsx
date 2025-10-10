@@ -5,8 +5,8 @@ import {useThree} from "@react-three/fiber";
 import {DecalItem} from "./DecalItem.tsx";
 import type {DecalDataType, DropDataType} from "../type/type";
 import {usePointerAction} from "../hooks/usePointerAction.ts";
-import {RegionTexture} from "./RegionTexture.tsx";
 import {toUV} from "../utils/common.ts";
+import {MaskedDecal} from "./MaskedDecal.tsx";
 
 interface Props {
     newDrop?: DropDataType;
@@ -26,6 +26,7 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
     const [decals, setDecals] = useState<DecalDataType[]>([]); // 원통에 붙일 디칼(개별 이미지 스티커) 리스트
     const [drawing, setDrawing] = useState<boolean>(false);
     const [dropTextures, setDropTextures] = useState<{pathIdx: number; texture: string}[]>([]) // 드롭된 텍스처와 연결된 경로 인덱스
+    const [hiddenLineIndices, setHiddenLineIndices] = useState<Set<number>>(new Set()); // 텍스처 이미지가 입혀진 숨길 라인 인덱스
     const { camera } = useThree();
 
     // 드로잉 모드일 때 원통 위에서 선을 그리고, 마우스를 떼면 저장
@@ -78,8 +79,6 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
 
         /**
          * 점이 다각형 내부에 있는지 여부 판별(ray casting 알고리즘)
-         * @param point
-         * @param polygon
          */
         const pointInPolygon = (point: THREE.Vector2, polygon: THREE.Vector2[]): boolean => {
             let inside = false;
@@ -120,6 +119,7 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
         // 드롭이 경로 내부에 있으면 해당 경로에 텍스터 매핑
         if(matchedIdx !== null){
             setDropTextures((prev) => [...prev, {pathIdx: matchedIdx, texture: newDrop.texture}])
+            setHiddenLineIndices((prev) => new Set(prev).add(matchedIdx));
             return;
         }
 
@@ -163,31 +163,31 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
                 <Line
                     points={currentPath}
                     color="black"
-                    lineWidth={2}
+                    lineWidth={3}
                 />
             )}
 
             {/* 저장된 선들 */}
-            {savedLines.map((path, idx) => (
-                <line key={idx}>
-                    <bufferGeometry
-                        attach="geometry"
-                        attributes={{
-                            position: new THREE.Float32BufferAttribute(
-                                path.flatMap((p) => [p.x, p.y, p.z]),
-                                3
-                            ),
-                        }}
-                    />
-                    <lineBasicMaterial color="black" linewidth={3}/>
-                </line>
-            ))}
+            {savedLines.map((path, idx) => {
+                if (hiddenLineIndices.has(idx)) {
+                    return null;
+                }
+                return <Line
+                    key={idx}
+                    points={path}
+                    color="black"
+                    lineWidth={3}
+                />
+            })}
 
             {/* 드롭된 텍스처가 경로 내부에 있을 경우 해당 영역에 RegionTexture 렌더 */}
             {dropTextures.map(({ pathIdx, texture }, i) => {
                 const path = savedLines[pathIdx];
-                if (!path) return null;
-                return <RegionTexture key={i} path={path} textureUrl={texture} radius={50}/>;
+                if (!path) {
+                    return null;
+                }
+                // return <RegionTexture key={i} path={path} textureUrl={texture}/>;
+                return <MaskedDecal key={i} currentPath={path} textureUrl={texture} targetMesh={cylinderRef.current!}/>
             })}
 
             {/* 그리기 모드가 아닐때만 카메라 제어 가능 */}
