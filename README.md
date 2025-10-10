@@ -1,69 +1,60 @@
-# React + TypeScript + Vite
+# 3D Cylinder Texture Mapping Practice (master 브랜치)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+3D 원통 위에 폐곡선 영역을 그리고, 그 안에 텍스처를 매핑
 
-Currently, two official plugins are available:
+## 프로젝트 개요
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+사용자가 3D 원통 표면에 자유롭게 영역을 그리고, 드래그 앤 드롭으로 텍스처 이미지를 붙일 수 있는 웹 기반 3D 그래픽 도구
 
-## Expanding the ESLint configuration
+### 주요 기능
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- ✏️ **폐곡선 그리기**: 원통 표면에 마우스로 자유롭게 영역 지정
+- 🖼️ **텍스처 매핑**: 드래그 앤 드롭으로 이미지 배치
+- 🎯 **스마트 마스킹**: 폐곡선 내부에만 텍스처가 표시되도록 자동 크롭
+- 📐 **다중 표면 지원**: 원통 옆면 지원
+- 🎨 **동적 스케일링**: 텍스처가 폐곡선 크기에 맞춰 자동 확대
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 기술 스택
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+- **React** - UI 프레임워크
+- **Three.js** - 3D 렌더링 엔진
+- **React Three Fiber** - Three.js React 래퍼
+- **@react-three/drei** - Three.js 유틸리티
+- **GLSL** - 커스텀 셰이더 프로그래밍
+- **TypeScript** - 타입 안정성
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 작동 흐름
+1. [영역 그리기 모드 활성화] <br>
+   └─> 원통 표면에 마우스 드래그로 폐곡선 그리기<br>
+   └─> 3D 좌표들이 배열로 저장됨
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+2. [이미지 드래그 앤 드롭]<br>
+   └─> Raycasting으로 드롭 위치의 3D 좌표 계산<br>
+   └─> UV 좌표로 변환
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+3. [폐곡선 내부 판별]<br>
+   └─> Point-in-Polygon 알고리즘 실행<br>
+   ├─> [내부] MaskedDecal 렌더링<br>
+   │   ├─> DecalGeometry 생성 (폐곡선 크기만큼)<br>
+   │   ├─> Canvas로 마스크 텍스처 생성<br>
+   │   ├─> Custom Shader로 마스킹 적용<br>
+   │   └─> 폐곡선 라인 숨김<br>
+   └─> [외부] 작은 DecalItem 스티커로 붙임
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 사용 방법
+#### 1. 영역 그리기
+- "영역 그리기" 버튼 클릭
+- 원통 위에 마우스 드래그로 폐곡선 그리기
+- 마우스를 떼면 경로 저장
+
+#### 2. 텍스처 붙이기
+- 상단 이미지 중 하나를 드래그
+- 원통의 원하는 위치에 드롭
+- 폐곡선 내부: 영역에 맞춰 텍스처 매핑
+- 폐곡선 외부: 작은 스티커로 붙음
+
+#### 3. 3D 뷰 조작
+- 그리기 모드가 아닐 때 OrbitControls 활성화
+- 마우스 드래그: 회전
+- 마우스 휠: 줌
+- 우클릭 드래그: 팬
