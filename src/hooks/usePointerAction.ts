@@ -31,16 +31,12 @@ export const usePointerAction = ({drawMode, drawing, setDrawing, cylinderRef, cu
         const x4 = p4.x, y4 = p4.y;
 
         const denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
-        if (denom === 0) return { intersect: false };
+        if (denom === 0) return {
+            intersect: false
+        };
 
-        const px =
-            ((x1 * y2 - y1 * x2) * (x3 - x4) -
-                (x1 - x2) * (x3 * y4 - y3 * x4)) /
-            denom;
-        const py =
-            ((x1 * y2 - y1 * x2) * (y3 - y4) -
-                (y1 - y2) * (x3 * y4 - y3 * x4)) /
-            denom;
+        const px = ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / denom;
+        const py = ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / denom;
 
         // 교차점이 선분 범위 안에 있는지 체크
         if (
