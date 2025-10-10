@@ -29,16 +29,13 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
     const [hiddenLineIndices, setHiddenLineIndices] = useState<Set<number>>(new Set()); // 텍스처 이미지가 입혀진 숨길 라인 인덱스
     const { camera } = useThree();
 
-    // 드로잉 모드일 때 원통 위에서 선을 그리고, 마우스를 떼면 저장
     const {handlePointerMove, handlePointerUp, handlePointerDown} = usePointerAction({drawMode, drawing, setDrawing, cylinderRef, currentPath, setCurrentPath, setSavedLines})
-
 
     /**
      * 새로운 drop 감지
-     * 새로운 드롭(이미지)이 생기면 raycaster로 원통에 닿은 위치를 계산
+     * 새로운 드롭이 생기면 raycaster로 원통에 닿은 위치를 계산
      * 해당 위치가 사용자가 그린 경로 내부인지 판별 후
-     * 내부라면 해당 영역에 텍스처 매핑
-     * 아니라면 개별 디칼로 붙임
+     * 내부라면 해당 영역에 texture 매핑 / 아니라면 개별 decal로 붙임
      */
     useEffect(() => {
         if (!newDrop || !cylinderRef.current) {
@@ -50,7 +47,7 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
         const mouse = new THREE.Vector2(newDrop.ndcX, newDrop.ndcY);
         raycaster.setFromCamera(mouse, camera);
 
-        // 원통과의 교차점 탐색
+        // 원기둥과의 교차점 탐색
         const intersects = raycaster.intersectObject(cylinderRef.current);
         if (intersects.length === 0) {
             return;
@@ -116,14 +113,14 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
             }
         }
 
-        // 드롭이 경로 내부에 있으면 해당 경로에 텍스터 매핑
+        // 드롭이 폐곡선 내부에 있으면 해당 경로에 texture 매핑
         if(matchedIdx !== null){
             setDropTextures((prev) => [...prev, {pathIdx: matchedIdx, texture: newDrop.texture}])
             setHiddenLineIndices((prev) => new Set(prev).add(matchedIdx));
             return;
         }
 
-        // 경로 내부가 아니라면 개별 decal 객체 추가
+        // 폐곡선 외부면 개별 decal 객체 추가
         const decal: DecalDataType = {
             position: localPos,
             rotation: new THREE.Euler().setFromQuaternion(
@@ -140,7 +137,6 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
 
     return (
         <>
-            {/* 원통 mesh 생성 */}
             <mesh
                 ref={cylinderRef}
                 onPointerDown={handlePointerDown}
@@ -153,12 +149,6 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
                 <meshStandardMaterial attach="material-2" color="lightgray" />
             </mesh>
 
-            {/* 드롭된 개별 decal */}
-            {decals.map((d, idx) => (
-                <DecalItem key={idx} decal={d} meshRef={cylinderRef} />
-            ))}
-
-            {/* 현재 그리는 선 */}
             {currentPath.length > 1 && (
                 <Line
                     points={currentPath}
@@ -167,7 +157,6 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
                 />
             )}
 
-            {/* 저장된 선들 */}
             {savedLines.map((path, idx) => {
                 if (hiddenLineIndices.has(idx)) {
                     return null;
@@ -180,17 +169,20 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
                 />
             })}
 
-            {/* 드롭된 텍스처가 경로 내부에 있을 경우 해당 영역에 RegionTexture 렌더 */}
+            {/* 폐곡선 외부에 드롭된 개별 decal */}
+            {decals.map((d, idx) => (
+                <DecalItem key={idx} decal={d} meshRef={cylinderRef} />
+            ))}
+
+            {/* 폐곡선 내부에 드롭된 masking decal */}
             {dropTextures.map(({ pathIdx, texture }, i) => {
                 const path = savedLines[pathIdx];
                 if (!path) {
                     return null;
                 }
-                // return <RegionTexture key={i} path={path} textureUrl={texture}/>;
                 return <MaskedDecal key={i} currentPath={path} textureUrl={texture} targetMesh={cylinderRef.current!}/>
             })}
 
-            {/* 그리기 모드가 아닐때만 카메라 제어 가능 */}
             {!drawMode && <OrbitControls enableZoom enablePan enableRotate />}
         </>
     );

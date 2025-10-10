@@ -59,7 +59,7 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
             new THREE.Vector3(diameter, diameter, diameter)
         );
 
-        // 원본 텍스처 로드
+        // 원본 texture 로드
         const baseTexture = new THREE.TextureLoader().load(textureUrl);
 
         // 폐곡선을 UV 좌표로 변환
@@ -73,7 +73,7 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
         const minV = Math.min(...alignedPathUVs.map(uv => uv.y));
         const maxV = Math.max(...alignedPathUVs.map(uv => uv.y));
 
-        // 마스크 텍스처 생성
+        // mask texture 생성
         const canvas = document.createElement('canvas');
         const size = 512;
         canvas.width = size;
@@ -102,7 +102,8 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
         const maskTexture = new THREE.CanvasTexture(canvas);
         maskTexture.needsUpdate = true;
 
-        // 커스텀 shader material
+        // custom shader material - GLSL(OpenGL Shading Language 문법)
+        // GPU에서 병렬로 실행되는 프로그램(셰이더) 작성 - 그래픽 렌더링 파이프라인 제어
         const material = new THREE.ShaderMaterial({
             uniforms: {
                 baseTexture: { value: baseTexture },
@@ -111,24 +112,29 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
                 uvScale: { value: new THREE.Vector2(maxU - minU, maxV - minV) },
             },
             vertexShader: `
+                // 각 정점의 좌표와 UV를 fragment shader 넘김
                 varying vec2 vUv;
                 varying vec3 vPosition;
                 
                 void main() {
                     vUv = uv;
                     vPosition = position;
+                    // gl_Position에 최종 변환된 정점 위치를 넣음
                     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
                 }
             `,
             fragmentShader: `
+                // uniform은 CPU(JavaScript 코드)에서 GPU로 전달되는 전역 상수
                 uniform sampler2D baseTexture;
                 uniform sampler2D maskTexture;
                 uniform vec2 uvOffset;
                 uniform vec2 uvScale;
+                
+                // varying은 vertex -> fragment로 보간되어 전달되는 값
                 varying vec2 vUv;
                 varying vec3 vPosition;
                 
-                // 3D 좌표를 원통 UV로 변환
+                // 3D 좌표를 원통 좌표계로 변환해서 UV로 매핑하는 함수
                 vec2 toUV(vec3 pos) {
                     float cylinderHeight = 100.0;
                     float theta = atan(pos.x, pos.z);
@@ -141,7 +147,7 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
                     // DecalGeometry의 월드 좌표를 UV로 변환
                     vec2 cylinderUV = toUV(vPosition);
                     
-                    // 마스크 텍스처 좌표 계산
+                    // mask texture 좌표 계산
                     vec2 maskUV = (cylinderUV - uvOffset) / uvScale;
                     
                     // 범위 체크
@@ -149,17 +155,18 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
                         discard;
                     }
                     
-                    // 마스크 샘플링
+                    // mask sampling
                     vec4 maskColor = texture2D(maskTexture, maskUV);
                     
-                    // 마스크가 검은색이면 버림
+                    // mask가 검은색이면 버림
                     if (maskColor.r < 0.5) {
                         discard;
                     }
                     
-                    // 베이스 텍스처 샘플링
+                    // base texture sampling
                     vec4 baseColor = texture2D(baseTexture, vUv);
                     
+                    // fragment(pixel)의 최종 색상 지정
                     gl_FragColor = vec4(baseColor.rgb, baseColor.a);
                 }
             `,
