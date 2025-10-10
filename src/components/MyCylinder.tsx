@@ -6,51 +6,63 @@ import {DecalItem} from "./DecalItem.tsx";
 import type {DecalDataType, DropDataType} from "../type/type";
 import {usePointerAction} from "../hooks/usePointerAction.ts";
 import {RegionTexture} from "./RegionTexture.tsx";
+import {toUV} from "../utils/common.ts";
 
 interface Props {
     newDrop?: DropDataType;
     drawMode: boolean;
 }
 
+/**
+ * 원통(mesh)에 마우스 드로잉 및 텍스처 드롭 기능 제공
+ * 사용자가 원통 위에 선(line)을 그리고, 해당 영역 안에 드롭이 발생하면 그 영역에 텍스처를 표시
+ * @param newDrop 새로 드롭된 텍스처 데이터
+ * @param drawMode 그리기 모드 여부
+ */
 export const MyCylinder = ({ newDrop, drawMode }: Props) => {
-    const cylinderRef = useRef<THREE.Mesh | null>(null);
-    const [currentPath, setCurrentPath] = useState<THREE.Vector3[]>([]);
-    const [savedLines, setSavedLines] = useState<THREE.Vector3[][]>([]);
-    const [decals, setDecals] = useState<DecalDataType[]>([]);
+    const cylinderRef = useRef<THREE.Mesh | null>(null); //  3D 객체(원통)의 참조
+    const [currentPath, setCurrentPath] = useState<THREE.Vector3[]>([]); // 현재 드로잉 중인 라인의 점들(Vector3 배열)
+    const [savedLines, setSavedLines] = useState<THREE.Vector3[][]>([]); // 사용자가 그린 모든 경로(저장된 선들)
+    const [decals, setDecals] = useState<DecalDataType[]>([]); // 원통에 붙일 디칼(개별 이미지 스티커) 리스트
     const [drawing, setDrawing] = useState<boolean>(false);
-    const [dropTextures, setDropTextures] = useState<{pathIdx: number; texture: string}[]>([])
+    const [dropTextures, setDropTextures] = useState<{pathIdx: number; texture: string}[]>([]) // 드롭된 텍스처와 연결된 경로 인덱스
     const { camera } = useThree();
 
+    // 드로잉 모드일 때 원통 위에서 선을 그리고, 마우스를 떼면 저장
     const {handlePointerMove, handlePointerUp, handlePointerDown} = usePointerAction({drawMode, drawing, setDrawing, cylinderRef, currentPath, setCurrentPath, setSavedLines})
 
 
-
-
-    // 새로운 drop 감지
+    /**
+     * 새로운 drop 감지
+     * 새로운 드롭(이미지)이 생기면 raycaster로 원통에 닿은 위치를 계산
+     * 해당 위치가 사용자가 그린 경로 내부인지 판별 후
+     * 내부라면 해당 영역에 텍스처 매핑
+     * 아니라면 개별 디칼로 붙임
+     */
     useEffect(() => {
         if (!newDrop || !cylinderRef.current) {
             return;
         }
 
+        // 마우스 좌표(NDC 기준)에서 광선 발사
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2(newDrop.ndcX, newDrop.ndcY);
         raycaster.setFromCamera(mouse, camera);
 
+        // 원통과의 교차점 탐색
         const intersects = raycaster.intersectObject(cylinderRef.current);
         if (intersects.length === 0) {
             return;
         }
 
+        // 첫번째 교차점만 사용
         const intersect = intersects[0];
         const localPos = cylinderRef.current.worldToLocal(intersect.point.clone());
 
-        const toUV = (p: THREE.Vector3): THREE.Vector2 => {
-            const theta = Math.atan2(p.x, p.z);
-            const u = (theta + Math.PI) / (2 * Math.PI);
-            const v = (p.y + 50) / 100;
-            return new THREE.Vector2(u, v);
-        }
-
+        /**
+         * 경로의 UV 좌표를 기준점(anchor)에 정렬
+         * 경로가 원통의 0~1 u 경계를 넘어가는 경우, 좌표를 보정
+         */
         const alignUvsToAnchor = (uvs: THREE.Vector2[], anchorU: number): THREE.Vector2[] => {
             return uvs.map((uv) => {
                 let u = uv.x;
@@ -64,6 +76,11 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
             })
         }
 
+        /**
+         * 점이 다각형 내부에 있는지 여부 판별(ray casting 알고리즘)
+         * @param point
+         * @param polygon
+         */
         const pointInPolygon = (point: THREE.Vector2, polygon: THREE.Vector2[]): boolean => {
             let inside = false;
             for(let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
@@ -78,10 +95,11 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
             return inside;
         }
 
-        const dropUV = toUV(localPos);
+        const dropUV = toUV(localPos); // drop 위치를 UV로 변환
 
         let matchedIdx: number | null = null;
 
+        // 저장된 각 선(line)에 대해 드롭이 내부에 있는지 검사
         for(let idx = 0; idx < savedLines.length; idx ++){
             const path = savedLines[idx];
             if(path.length < 3){
@@ -92,21 +110,20 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
             const alignedPathUVs = alignUvsToAnchor(pathUVs, dropUV.x);
             const alignedDropUV = new THREE.Vector2(dropUV.x, dropUV.y);
 
-            if(alignedPathUVs.length > 0){
-
-            }
-
+            // 실제 다각형 내부 판별
             if(pointInPolygon(alignedDropUV, alignedPathUVs)){
                 matchedIdx = idx;
                 break;
             }
         }
 
+        // 드롭이 경로 내부에 있으면 해당 경로에 텍스터 매핑
         if(matchedIdx !== null){
             setDropTextures((prev) => [...prev, {pathIdx: matchedIdx, texture: newDrop.texture}])
             return;
         }
 
+        // 경로 내부가 아니라면 개별 decal 객체 추가
         const decal: DecalDataType = {
             position: localPos,
             rotation: new THREE.Euler().setFromQuaternion(
@@ -123,6 +140,7 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
 
     return (
         <>
+            {/* 원통 mesh 생성 */}
             <mesh
                 ref={cylinderRef}
                 onPointerDown={handlePointerDown}
@@ -135,10 +153,12 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
                 <meshStandardMaterial attach="material-2" color="lightgray" />
             </mesh>
 
+            {/* 드롭된 개별 decal */}
             {decals.map((d, idx) => (
                 <DecalItem key={idx} decal={d} meshRef={cylinderRef} />
             ))}
 
+            {/* 현재 그리는 선 */}
             {currentPath.length > 1 && (
                 <Line
                     points={currentPath}
@@ -147,6 +167,7 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
                 />
             )}
 
+            {/* 저장된 선들 */}
             {savedLines.map((path, idx) => (
                 <line key={idx}>
                     <bufferGeometry
@@ -162,12 +183,14 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
                 </line>
             ))}
 
+            {/* 드롭된 텍스처가 경로 내부에 있을 경우 해당 영역에 RegionTexture 렌더 */}
             {dropTextures.map(({ pathIdx, texture }, i) => {
                 const path = savedLines[pathIdx];
                 if (!path) return null;
                 return <RegionTexture key={i} path={path} textureUrl={texture} radius={50}/>;
             })}
 
+            {/* 그리기 모드가 아닐때만 카메라 제어 가능 */}
             {!drawMode && <OrbitControls enableZoom enablePan enableRotate />}
         </>
     );
