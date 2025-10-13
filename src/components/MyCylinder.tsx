@@ -1,11 +1,11 @@
-import {Line, OrbitControls} from "@react-three/drei";
+import {Line} from "@react-three/drei";
 import { useRef, useState, useEffect } from "react";
 import * as THREE from "three";
 import {useThree} from "@react-three/fiber";
 import {DecalItem} from "./DecalItem.tsx";
 import type {DecalDataType, DropDataType} from "../type/type";
 import {usePointerAction} from "../hooks/usePointerAction.ts";
-import {toUV} from "../utils/common.ts";
+import {toUV_Cylinder} from "../utils/common.ts";
 import {MaskedDecal} from "./MaskedDecal.tsx";
 
 interface Props {
@@ -91,7 +91,7 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
             return inside;
         }
 
-        const dropUV = toUV(localPos); // drop 위치를 UV로 변환
+        const dropUV = toUV_Cylinder(localPos); // drop 위치를 UV로 변환
 
         let matchedIdx: number | null = null;
 
@@ -102,7 +102,7 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
                 continue; // 다각형이 아닌경우 무시
             }
 
-            const pathUVs = path.map(toUV);
+            const pathUVs = path.map(toUV_Cylinder);
             const alignedPathUVs = alignUvsToAnchor(pathUVs, dropUV.x);
             const alignedDropUV = new THREE.Vector2(dropUV.x, dropUV.y);
 
@@ -175,15 +175,13 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
             ))}
 
             {/* 폐곡선 내부에 드롭된 masking decal */}
-            {dropTextures.map(({ pathIdx, texture }, i) => {
+            {dropTextures.map(({ pathIdx, texture }, index) => {
                 const path = savedLines[pathIdx];
                 if (!path) {
                     return null;
                 }
-                return <MaskedDecal key={i} currentPath={path} textureUrl={texture} targetMesh={cylinderRef.current!}/>
+                return <MaskedDecal key={index} currentPath={path} textureUrl={texture} targetMesh={cylinderRef.current!}/>
             })}
-
-            {!drawMode && <OrbitControls enableZoom enablePan enableRotate />}
         </>
     );
 };

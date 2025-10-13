@@ -1,11 +1,12 @@
 import { Canvas } from "@react-three/fiber";
 import { MyCylinder } from "./components/MyCylinder";
-import { dirtImage, glassImage, grassImage, logImage, woodImage } from "./assets/images/image";
+import { dirtImage, glassImage, grassImage, logImage, woodImage, crackImage } from "./assets/images/image";
 import { useState } from "react";
 import type {DropDataType} from "./type/type";
 import {useDragAction} from "./hooks/useDragAction.ts";
+import {OrbitControls} from "@react-three/drei";
 
-const images = [dirtImage, glassImage, grassImage, logImage, woodImage];
+const images = [dirtImage, glassImage, grassImage, logImage, woodImage, crackImage];
 
 export default function App() {
     const [newDrop, setNewDrop] = useState<DropDataType | null>(null);
@@ -58,7 +59,18 @@ export default function App() {
                         newDrop={newDrop ?? undefined}
                         drawMode={drawMode}
                     />
+                    {/*<mesh position={[-120, 0, 0]}>*/}
+                    {/*    <sphereGeometry args={[30, 32, 32]} />*/}
+                    {/*    <meshNormalMaterial />*/}
+                    {/*</mesh>*/}
+
+                    {/*<mesh position={[120, 0, 0]}>*/}
+                    {/*    <boxGeometry args={[60, 60, 60]} />*/}
+                    {/*    <meshPhysicalMaterial  />*/}
+                    {/*</mesh>*/}
+                    {!drawMode && <OrbitControls enableZoom enablePan enableRotate  />}
                 </Canvas>
+
             </div>
 
         </div>

@@ -17,7 +17,6 @@ export const DecalItem = ({ decal, meshRef }: DecalItemProps) => {
         return null;
     }
 
-
     return (
         <Decal
             position={decal.position}

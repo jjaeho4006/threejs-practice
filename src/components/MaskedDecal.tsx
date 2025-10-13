@@ -3,7 +3,7 @@
 import * as THREE from "three";
 import { useMemo } from "react";
 import { DecalGeometry } from "three/examples/jsm/geometries/DecalGeometry";
-import {toUV} from "../utils/common.ts";
+import {toUV_Cylinder} from "../utils/common.ts";
 
 interface MaskedDecalProps {
     currentPath: THREE.Vector3[];
@@ -63,8 +63,8 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
         const baseTexture = new THREE.TextureLoader().load(textureUrl);
 
         // 폐곡선을 UV 좌표로 변환
-        const pathUVs = currentPath.map(toUV);
-        const centerUV = toUV(center);
+        const pathUVs = currentPath.map(toUV_Cylinder);
+        const centerUV = toUV_Cylinder(center);
         const alignedPathUVs = alignUvsToAnchor(pathUVs, centerUV.x);
 
         // UV 범위 계산
@@ -135,7 +135,7 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
                 varying vec3 vPosition;
                 
                 // 3D 좌표를 원통 좌표계로 변환해서 UV로 매핑하는 함수
-                vec2 toUV(vec3 pos) {
+                vec2 toUV_Cylinder(vec3 pos) {
                     float cylinderHeight = 100.0;
                     float theta = atan(pos.x, pos.z);
                     float u = (theta + 3.14159265) / (2.0 * 3.14159265);
@@ -145,7 +145,7 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
                 
                 void main() {
                     // DecalGeometry의 월드 좌표를 UV로 변환
-                    vec2 cylinderUV = toUV(vPosition);
+                    vec2 cylinderUV = toUV_Cylinder(vPosition);
                     
                     // mask texture 좌표 계산
                     vec2 maskUV = (cylinderUV - uvOffset) / uvScale;
