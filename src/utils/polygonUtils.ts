@@ -20,12 +20,12 @@ export const pointInPolygon = (point: THREE.Vector2, polygon: THREE.Vector2[]): 
 /**
  * 두 선분 (p1, p2), (p3, p4)가 교차하는지 판정
  */
-export function checkLineIntersection(
+export const checkLineIntersection = (
     p1: THREE.Vector3,
     p2: THREE.Vector3,
     p3: THREE.Vector3,
     p4: THREE.Vector3
-): { intersect: boolean; point?: THREE.Vector3 } {
+): { intersect: boolean; point?: THREE.Vector3 } => {
     const x1 = p1.x, y1 = p1.y;
     const x2 = p2.x, y2 = p2.y;
     const x3 = p3.x, y3 = p3.y;

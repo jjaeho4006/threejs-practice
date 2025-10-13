@@ -5,8 +5,9 @@ import {useThree} from "@react-three/fiber";
 import {DecalItem} from "./DecalItem.tsx";
 import type {DecalDataType, DropDataType} from "../type/type";
 import {usePointerAction} from "../hooks/usePointerAction.ts";
-import {toUV_Cylinder} from "../utils/common.ts";
+import {alignUvsToAnchor, toUV_Cylinder} from "../utils/common.ts";
 import {MaskedDecal} from "./MaskedDecal.tsx";
+import {pointInPolygon} from "../utils/polygonUtils.ts";
 
 interface Props {
     newDrop?: DropDataType;
@@ -56,40 +57,6 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
         // 첫번째 교차점만 사용
         const intersect = intersects[0];
         const localPos = cylinderRef.current.worldToLocal(intersect.point.clone());
-
-        /**
-         * 경로의 UV 좌표를 기준점(anchor)에 정렬
-         * 경로가 원통의 0~1 u 경계를 넘어가는 경우, 좌표를 보정
-         */
-        const alignUvsToAnchor = (uvs: THREE.Vector2[], anchorU: number): THREE.Vector2[] => {
-            return uvs.map((uv) => {
-                let u = uv.x;
-                if(u - anchorU > 0.5){
-                    u -= -1
-                }
-                else if(anchorU - u > 0.5){
-                    u += 1;
-                }
-                return new THREE.Vector2(u, uv.y);
-            })
-        }
-
-        /**
-         * 점이 다각형 내부에 있는지 여부 판별(ray casting 알고리즘)
-         */
-        const pointInPolygon = (point: THREE.Vector2, polygon: THREE.Vector2[]): boolean => {
-            let inside = false;
-            for(let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-                const xi = polygon[i].x, yi = polygon[i].y;
-                const xj = polygon[j].x, yj = polygon[j].y;
-
-                const intersect = ((yi > point.y) !== (yj > point.y)) && point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi;
-                if(intersect){
-                    inside = !inside;
-                }
-            }
-            return inside;
-        }
 
         const dropUV = toUV_Cylinder(localPos); // drop 위치를 UV로 변환
 
