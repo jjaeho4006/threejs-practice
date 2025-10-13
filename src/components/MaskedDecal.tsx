@@ -159,6 +159,7 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
             side: THREE.DoubleSide,
             polygonOffset: true,
             polygonOffsetFactor: -1,
+            polygonOffsetUnits: -4
         });
 
         return { decalGeometry: geometry, decalMaterial: material };

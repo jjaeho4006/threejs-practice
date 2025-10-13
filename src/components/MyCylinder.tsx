@@ -109,8 +109,9 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
+                renderOrder={0}
             >
-                <cylinderGeometry args={[50, 50, 100, 32, 1]} />
+                <cylinderGeometry args={[50, 50, 100, 32, 1]}/>
                 <meshStandardMaterial attach="material-0" color="white" />
                 <meshStandardMaterial attach="material-1" color="lightgray" />
                 <meshStandardMaterial attach="material-2" color="lightgray" />

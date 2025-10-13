@@ -63,6 +63,7 @@ export default function App() {
                         newDrop={newDrop ?? undefined}
                         drawMode={drawMode}
                     />
+                    {/* 마우스 컨트롤 */}
                     {!drawMode && <OrbitControls enableZoom enablePan enableRotate enableDamping/>}
                 </Canvas>
 

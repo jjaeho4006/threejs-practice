@@ -24,6 +24,7 @@ export const DecalItem = ({ decal, meshRef }: DecalItemProps) => {
             scale={decal.scale}
             map={decal.texture ? textureMap : undefined}
             mesh={meshRef as React.RefObject<THREE.Mesh>}
+            renderOrder={1}
         >
             {!decal.texture && (
                 <meshStandardMaterial
