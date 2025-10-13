@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { useMemo } from "react";
 import { DecalGeometry } from "three/examples/jsm/geometries/DecalGeometry";
 import {toUV_Cylinder} from "../utils/common.ts";
+import {getCenterOfPath, getMaxDiameter} from "../utils/decalUtils.ts";
 
 interface MaskedDecalProps {
     currentPath: THREE.Vector3[];
@@ -12,25 +13,7 @@ interface MaskedDecalProps {
 }
 
 export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecalProps) => {
-    // 폐곡선 중심점 계산
-    const getCenterOfPath = (points: THREE.Vector3[]) => {
-        const center = new THREE.Vector3();
-        points.forEach((p) => center.add(p));
-        center.divideScalar(points.length);
-        return center;
-    };
 
-    // 폐곡선 최대 지름 계산
-    const getMaxDiameter = (points: THREE.Vector3[]) => {
-        let maxDistance = 0;
-        for (let i = 0; i < points.length; i++) {
-            for (let j = i + 1; j < points.length; j++) {
-                const distance = points[i].distanceTo(points[j]);
-                if (distance > maxDistance) maxDistance = distance;
-            }
-        }
-        return maxDistance;
-    };
 
     // UV 좌표를 기준점에 정렬 (원통 경계 처리)
     const alignUvsToAnchor = (uvs: THREE.Vector2[], anchorU: number): THREE.Vector2[] => {
