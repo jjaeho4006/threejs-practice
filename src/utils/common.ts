@@ -16,87 +16,73 @@ export const toUV_Cylinder = (p: THREE.Vector3): THREE.Vector2 => {
  * 특정 3D 공간 상의 점 (worldPos)이 주어졌을 때,
  * 해당 점이 포함된 mesh의 표면 기준 UV 좌표를 근사적으로 구하는 함수
  */
-export const toUV_Generic = (mesh: THREE.Mesh, worldPos: THREE.Vector3):THREE.Vector2 | null=> {
-    const localPos = mesh.worldToLocal(worldPos);
+export const toUV_Generic = (
+    mesh: THREE.Mesh,
+    worldPos: THREE.Vector3
+): THREE.Vector2 | null => {
+    // 이미 worldPos가 world 기준이므로, 바로 local 변환
+    const localPos = mesh.worldToLocal(worldPos.clone());
 
-    // BufferGeometry가 아니면 처리 불가
     const geometry = mesh.geometry as THREE.BufferGeometry;
-    const geoAttr = geometry.attributes;
-    if(!geometry || !geoAttr.position || !geoAttr.uv){
-        console.error('❌ Geometry missing required attributes:', {
-            hasPosition: !!geoAttr.position,
-            hasUV: !!geoAttr.uv
-        });
+    const posAttr = geometry.attributes.position as THREE.BufferAttribute;
+    const uvAttr = geometry.attributes.uv as THREE.BufferAttribute;
+    const index = geometry.index;
+
+    if (!posAttr || !uvAttr) {
+        console.error("❌ Missing geometry attributes");
         return null;
     }
 
-    const uvAttr = geoAttr.uv as THREE.BufferAttribute;
-
-    // 추가
-    const posAttr = geoAttr.position as THREE.BufferAttribute;
-
-    let closestFaceIndex = -1;
+    let closestFace = -1;
     let minDist = Infinity;
 
-    const index = geometry.index;
     const faceCount = index ? index.count / 3 : posAttr.count / 3;
+    const v0 = new THREE.Vector3();
+    const v1 = new THREE.Vector3();
+    const v2 = new THREE.Vector3();
 
-    for(let i = 0; i < faceCount; i ++){
+    for (let i = 0; i < faceCount; i++) {
         const i0 = index ? index.getX(i * 3) : i * 3;
         const i1 = index ? index.getX(i * 3 + 1) : i * 3 + 1;
         const i2 = index ? index.getX(i * 3 + 2) : i * 3 + 2;
 
-        const v0 = new THREE.Vector3().fromBufferAttribute(posAttr, i0);
-        const v1 = new THREE.Vector3().fromBufferAttribute(posAttr, i1);
-        const v2 = new THREE.Vector3().fromBufferAttribute(posAttr, i2);
+        v0.fromBufferAttribute(posAttr, i0);
+        v1.fromBufferAttribute(posAttr, i1);
+        v2.fromBufferAttribute(posAttr, i2);
 
-        // 삼각형 중심점까지의 거리
-        const center = new THREE.Vector3().add(v0).add(v1).add(v2).divideScalar(3);
+        const center = new THREE.Vector3()
+            .add(v0)
+            .add(v1)
+            .add(v2)
+            .divideScalar(3);
 
         const dist = localPos.distanceTo(center);
-        if(dist < minDist){
+        if (dist < minDist) {
             minDist = dist;
-            closestFaceIndex = i;
+            closestFace = i;
         }
     }
 
-    if(closestFaceIndex === -1){
-        console.error('no face found');
-        return null;
-    }
+    if (closestFace < 0) return null;
 
-    // 가장 가까운 면의 인덱스
-    const i0 = index ? index.getX(closestFaceIndex * 3) : closestFaceIndex * 3;
-    const i1 = index ? index.getX(closestFaceIndex * 3 + 1) : closestFaceIndex * 3 + 1;
-    const i2 = index ? index.getX(closestFaceIndex * 3 + 2) : closestFaceIndex * 3 + 2;
+    const i0 = index ? index.getX(closestFace * 3) : closestFace * 3;
+    const i1 = index ? index.getX(closestFace * 3 + 1) : closestFace * 3 + 1;
+    const i2 = index ? index.getX(closestFace * 3 + 2) : closestFace * 3 + 2;
 
-    const v0 = new THREE.Vector3().fromBufferAttribute(posAttr, i0);
-    const v1 = new THREE.Vector3().fromBufferAttribute(posAttr, i1);
-    const v2 = new THREE.Vector3().fromBufferAttribute(posAttr, i2);
+    const vA = new THREE.Vector3().fromBufferAttribute(posAttr, i0);
+    const vB = new THREE.Vector3().fromBufferAttribute(posAttr, i1);
+    const vC = new THREE.Vector3().fromBufferAttribute(posAttr, i2);
+    const uvA = new THREE.Vector2().fromBufferAttribute(uvAttr, i0);
+    const uvB = new THREE.Vector2().fromBufferAttribute(uvAttr, i1);
+    const uvC = new THREE.Vector2().fromBufferAttribute(uvAttr, i2);
 
-    const uv0 = new THREE.Vector2().fromBufferAttribute(uvAttr, i0);
-    const uv1 = new THREE.Vector2().fromBufferAttribute(uvAttr, i1);
-    const uv2 = new THREE.Vector2().fromBufferAttribute(uvAttr, i2);
+    const bary = computeBarycentric(localPos, vA, vB, vC);
 
-    // Barycentric 좌표 계산
-    const bary = computeBarycentric(localPos, v0, v1, v2);
-
-    // UV 보간
-    const uv = new THREE.Vector2();
-    uv.x = uv0.x * bary.x + uv1.x * bary.y + uv2.x * bary.z;
-    uv.y = uv0.y * bary.x + uv1.y * bary.y + uv2.y * bary.z;
-
-    console.log('🗺️ UV computed:', {
-        closestFaceIndex,
-        minDist,
-        bary,
-        uv
-    });
-
-    return uv;
-
-
-}
+    return new THREE.Vector2(
+        uvA.x * bary.x + uvB.x * bary.y + uvC.x * bary.z,
+        uvA.y * bary.x + uvB.y * bary.y + uvC.y * bary.z
+    );
+};
 
 
 /**
