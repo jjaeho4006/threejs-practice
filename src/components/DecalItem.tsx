@@ -25,14 +25,6 @@ export const DecalItem = ({ decal, meshRef }: DecalItemProps) => {
             map={decal.texture ? textureMap : undefined}
             mesh={meshRef as React.RefObject<THREE.Mesh>}
             renderOrder={1}
-        >
-            {!decal.texture && (
-                <meshStandardMaterial
-                    color={0x000000}
-                    transparent
-                    opacity={0.5}
-                />
-            )}
-        </Decal>
+        />
     );
 };

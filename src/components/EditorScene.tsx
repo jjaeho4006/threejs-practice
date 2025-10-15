@@ -94,7 +94,7 @@ export const EditorScene = ({url, newDrop, drawMode}: Props) => {
         }
     }, [loadedScene]);
 
-    // 새로운 drop 감지 (개선된 디버깅 포함)
+    // 새로운 drop 감지
     useEffect(() => {
         if (!newDrop || !targetMeshRef.current) {
             if (newDrop && !targetMeshRef.current) {
@@ -102,14 +102,6 @@ export const EditorScene = ({url, newDrop, drawMode}: Props) => {
             }
             return;
         }
-
-
-
-        console.log('🎯 Processing drop:', {
-            texture: newDrop.texture,
-            ndcX: newDrop.ndcX,
-            ndcY: newDrop.ndcY
-        });
 
         // 마우스 좌표(NDC 기준)에서 광선 발사
         const raycaster = new THREE.Raycaster();
@@ -203,12 +195,17 @@ export const EditorScene = ({url, newDrop, drawMode}: Props) => {
 
             {/* 마우스 이벤트 핸들러를 mesh에 바인딩 */}
             {targetMeshRef.current && (
-                <primitive
-                    object={targetMeshRef.current}
+                <mesh
+                    geometry={targetMeshRef.current.geometry}
+                    position={targetMeshRef.current.position}
+                    rotation={targetMeshRef.current.rotation}
+                    scale={targetMeshRef.current.scale}
                     onPointerDown={handlePointerDown}
                     onPointerMove={handlePointerMove}
                     onPointerUp={handlePointerUp}
-                />
+                >
+                    <meshBasicMaterial transparent opacity={0} />
+                </mesh>
             )}
 
             {/* 드로잉 중 라인 */}
