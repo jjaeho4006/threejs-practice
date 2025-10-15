@@ -30,7 +30,7 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
     const [hiddenLineIndices, setHiddenLineIndices] = useState<Set<number>>(new Set()); // 텍스처 이미지가 입혀진 숨길 라인 인덱스
     const { camera } = useThree();
 
-    const {handlePointerMove, handlePointerUp, handlePointerDown} = usePointerAction({drawMode, drawing, setDrawing, cylinderRef, currentPath, setCurrentPath, setSavedLines})
+    const {handlePointerMove, handlePointerUp, handlePointerDown} = usePointerAction({drawMode, drawing, setDrawing, targetMeshRef:cylinderRef, currentPath, setCurrentPath, setSavedLines})
 
     /**
      * 새로운 drop 감지
@@ -111,7 +111,7 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
                 onPointerUp={handlePointerUp}
                 renderOrder={0}
             >
-                <cylinderGeometry args={[50, 50, 100, 32, 1]}/>
+                <cylinderGeometry args={[50, 50, 100, 70, 1]}/>
                 <meshStandardMaterial attach="material-0" color="white" />
                 <meshStandardMaterial attach="material-1" color="lightgray" />
                 <meshStandardMaterial attach="material-2" color="lightgray" />

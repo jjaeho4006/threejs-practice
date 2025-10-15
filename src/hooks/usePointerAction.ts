@@ -7,7 +7,7 @@ interface Props{
     drawMode: boolean;
     drawing: boolean;
     setDrawing: Dispatch<SetStateAction<boolean>>;
-    cylinderRef: RefObject<THREE.Mesh | null>; // 그릴 대상 mesh 참조
+    targetMeshRef: RefObject<THREE.Mesh | null>; // 그릴 대상 mesh 참조
     currentPath: THREE.Vector3[]; // 현재 드로잉 중인 좌표 리스트
     setCurrentPath: Dispatch<SetStateAction<THREE.Vector3[]>>;
     setSavedLines: Dispatch<SetStateAction<THREE.Vector3[][]>>;
@@ -16,7 +16,7 @@ interface Props{
 /**
  * 3D CylinderRef의 표면 위에서 마우스 드로잉을 통해 폐곡선을 형성하는 기능
  */
-export const usePointerAction = ({drawMode, drawing, setDrawing, cylinderRef, currentPath, setCurrentPath, setSavedLines}: Props) => {
+export const usePointerAction = ({drawMode, drawing, setDrawing, targetMeshRef, currentPath, setCurrentPath, setSavedLines}: Props) => {
 
     const { camera, gl } = useThree();
     const raycaster = new THREE.Raycaster();
@@ -27,7 +27,7 @@ export const usePointerAction = ({drawMode, drawing, setDrawing, cylinderRef, cu
      * Raycaster를 이용해서 cylinderRef와의 교차점을 계산하여 실제 3D 공간상의 좌표(THREE.Vector3)로 반환
      */
     const getIntersectPoint = (e: PointerEvent):THREE.Vector3 | null => {
-        if(!cylinderRef.current){
+        if(!targetMeshRef.current){
             return null;
         }
 
@@ -38,7 +38,7 @@ export const usePointerAction = ({drawMode, drawing, setDrawing, cylinderRef, cu
 
         // 카메라 방향으로 Ray 발사 후 mesh와의 교차점 계산
         raycaster.setFromCamera(mouse, camera)
-        const intersects = raycaster.intersectObject(cylinderRef.current);
+        const intersects = raycaster.intersectObject(targetMeshRef.current);
         return intersects.length > 0 ? intersects[0].point.clone() : null;
     }
 

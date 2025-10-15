@@ -3,7 +3,7 @@
 import * as THREE from "three";
 import { useMemo } from "react";
 import { DecalGeometry } from "three/examples/jsm/geometries/DecalGeometry";
-import {toUV_Cylinder} from "../utils/common.ts";
+import {alignUvsToAnchor, toUV_Cylinder} from "../utils/common.ts";
 import {getCenterOfPath, getMaxDiameter} from "../utils/decalUtils.ts";
 
 interface MaskedDecalProps {
@@ -13,20 +13,6 @@ interface MaskedDecalProps {
 }
 
 export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecalProps) => {
-
-
-    // UV 좌표를 기준점에 정렬 (원통 경계 처리)
-    const alignUvsToAnchor = (uvs: THREE.Vector2[], anchorU: number): THREE.Vector2[] => {
-        return uvs.map((uv) => {
-            let u = uv.x;
-            if (u - anchorU > 0.5) {
-                u -= 1;
-            } else if (anchorU - u > 0.5) {
-                u += 1;
-            }
-            return new THREE.Vector2(u, uv.y);
-        });
-    };
 
     const decalData = useMemo(() => {
         if (!targetMesh || currentPath.length < 3) return null;
