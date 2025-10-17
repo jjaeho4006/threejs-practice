@@ -1,12 +1,12 @@
 import { Canvas } from "@react-three/fiber";
 import { MyCylinder } from "./components/MyCylinder";
-import { dirtImage, glassImage, grassImage, logImage, woodImage, crackImage } from "./assets/images/image";
+import { hatch18, hatch30, hatch36, hatch42, hatch48 } from "./assets/images/image";
 import { useState } from "react";
 import type {DropDataType} from "./type/type";
 import {useDragAction} from "./hooks/useDragAction.ts";
 import {OrbitControls} from "@react-three/drei";
 
-const images = [dirtImage, glassImage, grassImage, logImage, woodImage, crackImage];
+const images = [hatch18, hatch30, hatch36, hatch42, hatch48];
 
 export default function App() {
     const [newDrop, setNewDrop] = useState<DropDataType | null>(null);
@@ -58,11 +58,11 @@ export default function App() {
 
                     {/*점광원: 전구처럼 한 점에서 사방으로 퍼지는 빛 */}
                     <pointLight position={[50, 50, 50]} />
-                    <EditorScene url={"/model.json"} drawMode={drawMode} newDrop={newDrop ?? undefined}/>
-                    {/*<MyCylinder*/}
-                    {/*    newDrop={newDrop ?? undefined}*/}
-                    {/*    drawMode={drawMode}*/}
-                    {/*/>*/}
+                    {/*<EditorScene url={"/model.json"} drawMode={drawMode} newDrop={newDrop ?? undefined}/>*/}
+                    <MyCylinder
+                        newDrop={newDrop ?? undefined}
+                        drawMode={drawMode}
+                    />
                     {/* 마우스 컨트롤 */}
                     {!drawMode && <OrbitControls enableZoom enablePan enableRotate enableDamping/>}
                 </Canvas>

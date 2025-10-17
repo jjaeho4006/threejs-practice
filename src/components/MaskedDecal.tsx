@@ -1,10 +1,9 @@
-'use client';
-
 import * as THREE from "three";
-import { useMemo } from "react";
+import {useEffect, useMemo, useState} from "react";
 import { DecalGeometry } from "three/examples/jsm/geometries/DecalGeometry";
 import {alignUvsToAnchor, toUV_Cylinder} from "../utils/common.ts";
 import {getCenterOfPath, getMaxDiameter} from "../utils/decalUtils.ts";
+import {svgToTexture} from "../utils/svgToTexture.ts";
 
 interface MaskedDecalProps {
     currentPath: THREE.Vector3[];
@@ -13,6 +12,28 @@ interface MaskedDecalProps {
 }
 
 export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecalProps) => {
+
+    const [baseTexture, setBaseTexture] = useState<THREE.Texture | null>(null);
+
+    useEffect(() => {
+        svgToTexture(textureUrl, 4096).then((texture) => {
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.minFilter = THREE.LinearMipmapLinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            setBaseTexture(texture);
+        })
+
+        return () => {
+            if(baseTexture) {
+                baseTexture.dispose();
+            }
+        }
+    }, [textureUrl, baseTexture]);
+
+    useEffect(() => {
+        console.log(baseTexture)
+    }, [baseTexture]);
 
     const decalData = useMemo(() => {
         if (!targetMesh || currentPath.length < 3) return null;
@@ -28,9 +49,6 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
             new THREE.Vector3(diameter, diameter, diameter)
         );
 
-        // 원본 texture 로드
-        const baseTexture = new THREE.TextureLoader().load(textureUrl);
-
         // 폐곡선을 UV 좌표로 변환
         const pathUVs = currentPath.map(toUV_Cylinder);
         const centerUV = toUV_Cylinder(center);
@@ -41,6 +59,23 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
         const maxU = Math.max(...alignedPathUVs.map(uv => uv.x));
         const minV = Math.min(...alignedPathUVs.map(uv => uv.y));
         const maxV = Math.max(...alignedPathUVs.map(uv => uv.y));
+
+        // UV 범위를 실제 3D 크기로 변환
+        const cylinderRadius = 50;
+        const cylinderHeight = 100;
+
+        // UV 너비/높이를 실제 월드 공간 크기로 변환
+        const uvWidth = maxU - minU;
+        const uvHeight = maxV - minV;
+        const worldWidth = uvWidth * 2 * Math.PI * cylinderRadius; // 원통 둘레 기준
+        const worldHeight = uvHeight * cylinderHeight;
+
+        // DecalItem의 scale과 동일한 기준 크기
+        const targetDecalSize = 8;
+
+        // 폐곡선 영역 내에 몇 개의 타일이 들어갈지 계산
+        const tilesX = worldWidth / targetDecalSize;
+        const tilesY = worldHeight / targetDecalSize;
 
         // mask texture 생성
         const canvas = document.createElement('canvas');
@@ -72,13 +107,14 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
         maskTexture.needsUpdate = true;
 
         // custom shader material - GLSL(OpenGL Shading Language 문법)
-        // GPU에서 병렬로 실행되는 프로그램(셰이더) 작성 - 그래픽 렌더링 파이프라인 제어
         const material = new THREE.ShaderMaterial({
             uniforms: {
                 baseTexture: { value: baseTexture },
                 maskTexture: { value: maskTexture },
                 uvOffset: { value: new THREE.Vector2(minU, minV) },
                 uvScale: { value: new THREE.Vector2(maxU - minU, maxV - minV) },
+                tileScaleX: { value: tilesX },
+                tileScaleY: { value: tilesY }
             },
             vertexShader: `
                 // 각 정점의 좌표와 UV를 fragment shader 넘김
@@ -88,7 +124,6 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
                 void main() {
                     vUv = uv;
                     vPosition = position;
-                    // gl_Position에 최종 변환된 정점 위치를 넣음
                     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
                 }
             `,
@@ -98,6 +133,8 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
                 uniform sampler2D maskTexture;
                 uniform vec2 uvOffset;
                 uniform vec2 uvScale;
+                uniform float tileScaleX;
+                uniform float tileScaleY;
                 
                 // varying은 vertex -> fragment로 보간되어 전달되는 값
                 varying vec2 vUv;
@@ -113,13 +150,11 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
                 }
                 
                 void main() {
-                    // DecalGeometry의 월드 좌표를 UV로 변환
                     vec2 cylinderUV = toUV_Cylinder(vPosition);
                     
                     // mask texture 좌표 계산
                     vec2 maskUV = (cylinderUV - uvOffset) / uvScale;
                     
-                    // 범위 체크
                     if (maskUV.x < 0.0 || maskUV.x > 1.0 || maskUV.y < 0.0 || maskUV.y > 1.0) {
                         discard;
                     }
@@ -132,8 +167,11 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
                         discard;
                     }
                     
+                    // X, Y 각각 다른 타일 스케일 적용
+                    vec2 tiledUV = fract(vec2(maskUV.x * tileScaleX, maskUV.y * tileScaleY));
+                    
                     // base texture sampling
-                    vec4 baseColor = texture2D(baseTexture, vUv);
+                    vec4 baseColor = texture2D(baseTexture, tiledUV);
                     
                     // fragment(pixel)의 최종 색상 지정
                     gl_FragColor = vec4(baseColor.rgb, baseColor.a);
@@ -149,7 +187,7 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
         });
 
         return { decalGeometry: geometry, decalMaterial: material };
-    }, [currentPath, targetMesh, textureUrl]);
+    }, [baseTexture, currentPath, targetMesh]);
 
     if (!decalData) return null;
 
