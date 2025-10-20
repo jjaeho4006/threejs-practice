@@ -4,6 +4,7 @@ export const loadTextureHighRes = (url: string, resolution: number = 2048) : Pro
 
     return new Promise((resolve, reject) => {
         const isSVG = url.endsWith('.svg');
+        console.log(url,'isSVG:', isSVG);
 
         if(isSVG){
             const canvas = document.createElement('canvas');

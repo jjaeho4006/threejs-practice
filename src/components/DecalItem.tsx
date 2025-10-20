@@ -13,14 +13,23 @@ export const DecalItem = ({ decal, meshRef }: DecalItemProps) => {
     const [baseTexture, setBaseTexture] = useState<THREE.Texture | null>(null);
 
     useEffect(() => {
-        loadTextureHighRes(decal.texture, 1024).then((texture) => {
+        loadTextureHighRes(decal.texture, 2048).then((texture) => {
+            texture.minFilter = THREE.LinearMipmapLinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.generateMipmaps = true;
+            texture.anisotropy = 16;
+            texture.wrapT = THREE.ClampToEdgeWrapping;
+            texture.wrapS = THREE.ClampToEdgeWrapping;
+            texture.needsUpdate = true;
+
             setBaseTexture(texture);
-            return () => {
-                if(baseTexture) {
-                    baseTexture.dispose();
-                }
-            }
         })
+
+        return () => {
+            if(baseTexture) {
+                baseTexture.dispose();
+            }
+        }
     }, [decal.texture]);
 
     if (!meshRef.current || !decal || !baseTexture) {

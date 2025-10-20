@@ -14,11 +14,3 @@ export type DropDataType = {
     ndcX: number;
     ndcY: number;
 }
-
-export type StrokePointType = {
-    pos: THREE.Vector3;
-    normal: THREE.Vector3;
-    size: number;
-    color: string;
-    id: string;
-}

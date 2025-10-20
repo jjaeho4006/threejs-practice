@@ -23,8 +23,8 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh, textureWidth,
             texture.wrapS = THREE.RepeatWrapping;
             texture.minFilter = THREE.LinearMipmapLinearFilter;
             texture.magFilter = THREE.LinearFilter;
-            texture.generateMipmaps = true;
-            texture.anisotropy = 4;
+            texture.generateMipmaps = true
+            texture.anisotropy = 16;
             setBaseTexture(texture);
         })
 
@@ -115,7 +115,7 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh, textureWidth,
                 tileScaleX: { value: tilesX },
                 tileScaleY: { value: tilesY },
                 imgAspect: { value: textureWidth / textureHeight },
-                edgePadding: { value: 0.012 }
+                edgePadding: { value: 0.0119 }
             },
             vertexShader: `
                 // 각 정점의 좌표와 UV를 fragment shader 넘김
