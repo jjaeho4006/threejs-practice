@@ -1,26 +1,30 @@
 import * as THREE from "three";
 import {useEffect, useMemo, useState} from "react";
 import { DecalGeometry } from "three/examples/jsm/geometries/DecalGeometry";
-import {alignUvsToAnchor, toUV_Cylinder} from "../utils/common.ts";
+import {alignUvsToAnchor, toUV_Cylinder} from "../utils/toUV.ts";
 import {getCenterOfPath, getMaxDiameter} from "../utils/decalUtils.ts";
-import {svgToTexture} from "../utils/svgToTexture.ts";
+import {loadTextureHighRes} from "../utils/loadTextureHighRes.ts";
 
 interface MaskedDecalProps {
     currentPath: THREE.Vector3[];
     textureUrl: string;
     targetMesh: THREE.Mesh;
+    textureWidth: number;
+    textureHeight: number;
 }
 
-export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecalProps) => {
+export const MaskedDecal = ({ currentPath, textureUrl, targetMesh, textureWidth, textureHeight }: MaskedDecalProps) => {
 
     const [baseTexture, setBaseTexture] = useState<THREE.Texture | null>(null);
 
     useEffect(() => {
-        svgToTexture(textureUrl, 4096).then((texture) => {
+        loadTextureHighRes(textureUrl, 1024).then((texture) => {
             texture.wrapT = THREE.RepeatWrapping;
             texture.wrapS = THREE.RepeatWrapping;
             texture.minFilter = THREE.LinearMipmapLinearFilter;
             texture.magFilter = THREE.LinearFilter;
+            texture.generateMipmaps = true;
+            texture.anisotropy = 4;
             setBaseTexture(texture);
         })
 
@@ -29,14 +33,12 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
                 baseTexture.dispose();
             }
         }
-    }, [textureUrl, baseTexture]);
-
-    useEffect(() => {
-        console.log(baseTexture)
-    }, [baseTexture]);
+    }, [textureUrl]);
 
     const decalData = useMemo(() => {
-        if (!targetMesh || currentPath.length < 3) return null;
+        if (!targetMesh || currentPath.length < 3) {
+            return null;
+        }
 
         const center = getCenterOfPath(currentPath);
         const diameter = getMaxDiameter(currentPath);
@@ -64,18 +66,16 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
         const cylinderRadius = 50;
         const cylinderHeight = 100;
 
-        // UV 너비/높이를 실제 월드 공간 크기로 변환
+        // UV 너비/높이를 실제 world 공간 크기로 변환
         const uvWidth = maxU - minU;
         const uvHeight = maxV - minV;
-        const worldWidth = uvWidth * 2 * Math.PI * cylinderRadius; // 원통 둘레 기준
+        const worldWidth = uvWidth * 2 * Math.PI * cylinderRadius;
         const worldHeight = uvHeight * cylinderHeight;
 
-        // DecalItem의 scale과 동일한 기준 크기
-        const targetDecalSize = 8;
+        const baseSize = 0.1;
 
-        // 폐곡선 영역 내에 몇 개의 타일이 들어갈지 계산
-        const tilesX = worldWidth / targetDecalSize;
-        const tilesY = worldHeight / targetDecalSize;
+        const tilesX = worldWidth / (textureWidth * baseSize);
+        const tilesY = (worldHeight / (textureHeight * baseSize));
 
         // mask texture 생성
         const canvas = document.createElement('canvas');
@@ -106,7 +106,6 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
         const maskTexture = new THREE.CanvasTexture(canvas);
         maskTexture.needsUpdate = true;
 
-        // custom shader material - GLSL(OpenGL Shading Language 문법)
         const material = new THREE.ShaderMaterial({
             uniforms: {
                 baseTexture: { value: baseTexture },
@@ -114,7 +113,9 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
                 uvOffset: { value: new THREE.Vector2(minU, minV) },
                 uvScale: { value: new THREE.Vector2(maxU - minU, maxV - minV) },
                 tileScaleX: { value: tilesX },
-                tileScaleY: { value: tilesY }
+                tileScaleY: { value: tilesY },
+                imgAspect: { value: textureWidth / textureHeight },
+                edgePadding: { value: 0.012 }
             },
             vertexShader: `
                 // 각 정점의 좌표와 UV를 fragment shader 넘김
@@ -128,15 +129,14 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
                 }
             `,
             fragmentShader: `
-                // uniform은 CPU(JavaScript 코드)에서 GPU로 전달되는 전역 상수
                 uniform sampler2D baseTexture;
                 uniform sampler2D maskTexture;
                 uniform vec2 uvOffset;
                 uniform vec2 uvScale;
                 uniform float tileScaleX;
                 uniform float tileScaleY;
+                uniform float edgePadding; // 이미지 테두리 여백
                 
-                // varying은 vertex -> fragment로 보간되어 전달되는 값
                 varying vec2 vUv;
                 varying vec3 vPosition;
                 
@@ -159,7 +159,7 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
                         discard;
                     }
                     
-                    // mask sampling
+                    // mask sampling(polygon 내부만 허용)
                     vec4 maskColor = texture2D(maskTexture, maskUV);
                     
                     // mask가 검은색이면 버림
@@ -169,6 +169,11 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
                     
                     // X, Y 각각 다른 타일 스케일 적용
                     vec2 tiledUV = fract(vec2(maskUV.x * tileScaleX, maskUV.y * tileScaleY));
+                    
+                    // 이미지 여백 제거(edgePadding 값 으로 조정)
+                    if (edgePadding > 0.0) {
+                        tiledUV = tiledUV * (1.0 - 2.0 * edgePadding) + edgePadding;
+                    }
                     
                     // base texture sampling
                     vec4 baseColor = texture2D(baseTexture, tiledUV);
@@ -193,5 +198,5 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh }: MaskedDecal
 
     const { decalGeometry, decalMaterial } = decalData;
 
-    return <mesh geometry={decalGeometry} material={decalMaterial} renderOrder={2} />;
+    return <mesh geometry={decalGeometry} material={decalMaterial} renderOrder={3} />;
 };

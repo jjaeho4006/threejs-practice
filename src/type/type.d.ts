@@ -22,18 +22,3 @@ export type StrokePointType = {
     color: string;
     id: string;
 }
-
-export type StrokeType = {
-    id: string;
-    points: StrokePointType[];
-    closed: boolean;
-}
-
-declare module 'three' {
-    interface MeshStandardMaterialParameters {
-        stencilWrite?: boolean;
-        stencilRef?: number;
-        stencilFunc?: number;
-        stencilMask?: number;
-    }
-}

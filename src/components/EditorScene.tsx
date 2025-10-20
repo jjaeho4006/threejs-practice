@@ -4,7 +4,7 @@ import type {DecalDataType, DropDataType} from "../type/type";
 import {useEffect, useRef, useState} from "react";
 import * as THREE from "three";
 import {usePointerAction} from "../hooks/usePointerAction.ts";
-import {alignUvsToAnchor, toUV_Cylinder, toUV_Generic} from "../utils/common.ts";
+import {alignUvsToAnchor, toUV_Cylinder, toUV_Generic} from "../utils/toUV.ts";
 import {pointInPolygon} from "../utils/polygonUtils.ts";
 import {MaskedDecal} from "./MaskedDecal.tsx";
 import {DecalItem} from "./DecalItem.tsx";
@@ -233,6 +233,8 @@ export const EditorScene = ({url, newDrop, drawMode}: Props) => {
                         currentPath={path}
                         textureUrl={texture}
                         targetMesh={targetMeshRef.current!}
+                        textureWidth={41}
+                        textureHeight={24}
                     />
                 );
             })}

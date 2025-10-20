@@ -5,7 +5,7 @@ import {useThree} from "@react-three/fiber";
 import {DecalItem} from "./DecalItem.tsx";
 import type {DecalDataType, DropDataType} from "../type/type";
 import {usePointerAction} from "../hooks/usePointerAction.ts";
-import {alignUvsToAnchor, toUV_Cylinder} from "../utils/common.ts";
+import {alignUvsToAnchor, toUV_Cylinder} from "../utils/toUV.ts";
 import {MaskedDecal} from "./MaskedDecal.tsx";
 import {pointInPolygon} from "../utils/polygonUtils.ts";
 
@@ -27,7 +27,6 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
     const [decals, setDecals] = useState<DecalDataType[]>([]); // 원통에 붙일 디칼(개별 이미지 스티커) 리스트
     const [drawing, setDrawing] = useState<boolean>(false);
     const [dropTextures, setDropTextures] = useState<{pathIdx: number; texture: string}[]>([]) // 드롭된 텍스처와 연결된 경로 인덱스
-    const [hiddenLineIndices, setHiddenLineIndices] = useState<Set<number>>(new Set()); // 텍스처 이미지가 입혀진 숨길 라인 인덱스
     const { camera } = useThree();
 
     const {handlePointerMove, handlePointerUp, handlePointerDown} = usePointerAction({drawMode, drawing, setDrawing, targetMeshRef:cylinderRef, currentPath, setCurrentPath, setSavedLines})
@@ -83,9 +82,11 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
         // 드롭이 폐곡선 내부에 있으면 해당 경로에 texture 매핑
         if(matchedIdx !== null){
             setDropTextures((prev) => [...prev, {pathIdx: matchedIdx, texture: newDrop.texture}])
-            setHiddenLineIndices((prev) => new Set(prev).add(matchedIdx));
             return;
         }
+
+        const baseSize = 0.1;
+        const decalScale: [number, number, number] = [41 * baseSize, 24 * baseSize, 1];
 
         // 폐곡선 외부면 개별 decal 객체 추가
         const decal: DecalDataType = {
@@ -96,7 +97,7 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
                     intersect.face?.normal ?? new THREE.Vector3(0, 1, 0)
                 )
             ),
-            scale: [8, 8, 5],
+            scale: decalScale,
             texture: newDrop.texture,
         };
         setDecals((prev) => [...prev, decal]);
@@ -125,17 +126,14 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
                 />
             )}
 
-            {savedLines.map((path, idx) => {
-                if (hiddenLineIndices.has(idx)) {
-                    return null;
-                }
-                return <Line
+            {savedLines.map((path, idx) => (
+                <Line
                     key={idx}
                     points={path}
                     color="black"
-                    lineWidth={3}
+                    lineWidth={0.5}
                 />
-            })}
+            ))}
 
             {/* 폐곡선 외부에 드롭된 개별 decal */}
             {decals.map((d, idx) => (
@@ -148,7 +146,7 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
                 if (!path) {
                     return null;
                 }
-                return <MaskedDecal key={index} currentPath={path} textureUrl={texture} targetMesh={cylinderRef.current!}/>
+                return <MaskedDecal key={index} currentPath={path} textureUrl={texture} targetMesh={cylinderRef.current!} textureWidth={41} textureHeight={24}/>
             })}
         </>
     );

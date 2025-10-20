@@ -1,7 +1,8 @@
-import React from "react";
+import React, {useEffect, useState} from "react";
 import * as THREE from "three";
-import {Decal, useTexture} from "@react-three/drei";
+import {Decal} from "@react-three/drei";
 import type {DecalDataType} from "../type/type";
+import {loadTextureHighRes} from "../utils/loadTextureHighRes.ts";
 
 interface DecalItemProps {
     decal: DecalDataType;
@@ -9,11 +10,20 @@ interface DecalItemProps {
 }
 
 export const DecalItem = ({ decal, meshRef }: DecalItemProps) => {
-    const texture = useTexture(decal.texture);
+    const [baseTexture, setBaseTexture] = useState<THREE.Texture | null>(null);
 
-    const textureMap = decal.texture ? texture : undefined;
+    useEffect(() => {
+        loadTextureHighRes(decal.texture, 1024).then((texture) => {
+            setBaseTexture(texture);
+            return () => {
+                if(baseTexture) {
+                    baseTexture.dispose();
+                }
+            }
+        })
+    }, [decal.texture]);
 
-    if (!meshRef.current || !decal) {
+    if (!meshRef.current || !decal || !baseTexture) {
         return null;
     }
 
@@ -22,7 +32,7 @@ export const DecalItem = ({ decal, meshRef }: DecalItemProps) => {
             position={decal.position}
             rotation={decal.rotation}
             scale={decal.scale}
-            map={decal.texture ? textureMap : undefined}
+            map={baseTexture ?? undefined}
             mesh={meshRef as React.RefObject<THREE.Mesh>}
             renderOrder={1}
         />

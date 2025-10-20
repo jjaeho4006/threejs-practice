@@ -46,7 +46,7 @@ export default function App() {
                         alt={`image-item-${idx}`}
                         draggable
                         onDragStart={(e) => handleDragStart(e, src)}
-                        style={{ width: "50px", height: "50px", objectFit: "cover", cursor: "grab" }}
+                        style={{  cursor: "grab" }}
                     />
                 ))}
             </div>
