@@ -192,7 +192,7 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh, textureWidth,
         });
 
         return { decalGeometry: geometry, decalMaterial: material };
-    }, [baseTexture, currentPath, targetMesh]);
+    }, [baseTexture, currentPath, targetMesh, textureHeight, textureWidth]);
 
     if (!decalData) return null;
 
