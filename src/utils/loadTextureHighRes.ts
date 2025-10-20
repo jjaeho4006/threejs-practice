@@ -4,7 +4,6 @@ export const loadTextureHighRes = (url: string, resolution: number = 2048) : Pro
 
     return new Promise((resolve, reject) => {
         const isSVG = url.endsWith('.svg');
-        console.log(url,'isSVG:', isSVG);
 
         if(isSVG){
             const canvas = document.createElement('canvas');
@@ -28,7 +27,7 @@ export const loadTextureHighRes = (url: string, resolution: number = 2048) : Pro
             img.src = url;
         }
         else{
-            // 일반 이미지는 TextureLoader 사용
+            // 일반 이미지
             const loader = new THREE.TextureLoader();
             loader.load(url, resolve, undefined, reject)
         }

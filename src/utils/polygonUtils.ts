@@ -31,13 +31,13 @@ export const checkLineIntersection = (
     const x3 = p3.x, y3 = p3.y;
     const x4 = p4.x, y4 = p4.y;
 
-    const denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
-    if (denom === 0) {
+    const denominator = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4); // 분모
+    if (denominator === 0) {
         return { intersect: false };
     }
 
-    const px = ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / denom;
-    const py = ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / denom;
+    const px = ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / denominator;
+    const py = ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / denominator;
 
     // 교차점 이 선분 범위 안에 있는지 체크
     if (
@@ -52,14 +52,18 @@ export const checkLineIntersection = (
     return { intersect: true, point: new THREE.Vector3(px, py, p1.z) };
 }
 
-
+/**
+ * path 중에서 자기 자신과 교차되는 부분을 찾아, 교차 영역을 기준으로 닫힌 경로를 추출하는 역할
+ */
 export const extractClosedPathFromSelfIntersection = (path: THREE.Vector3[]): THREE.Vector3[] | null => {
     const intersections: {indexA: number, indexB: number, point: THREE.Vector3}[] = []
 
     for(let i = 0; i < path.length - 1; i ++){
         for(let j = i + 2; j < path.length - 1; j ++){
+            // 두 선분이 서로 교차하는지 검사(단, 바로 인접한 선분은 교차하지 않도록 j = i + 2 부터 검사)
             const {intersect, point} = checkLineIntersection(path[i], path[i + 1], path[j], path[j + 1])
             if(intersect && point){
+                // indexA, indexB : 교차되는 두 선분의 시작 인덱스 / point : 실제 교차되는 위치(THREE.Vector3)
                 intersections.push({indexA: i, indexB: j, point})
             }
         }

@@ -58,7 +58,6 @@ export default function App() {
 
                     {/*점광원: 전구처럼 한 점에서 사방으로 퍼지는 빛 */}
                     <pointLight position={[50, 50, 50]} />
-                    {/*<EditorScene url={"/model.json"} drawMode={drawMode} newDrop={newDrop ?? undefined}/>*/}
                     <MyCylinder
                         newDrop={newDrop ?? undefined}
                         drawMode={drawMode}

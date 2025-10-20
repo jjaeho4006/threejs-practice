@@ -8,14 +8,11 @@ interface Props{
     drawing: boolean;
     setDrawing: Dispatch<SetStateAction<boolean>>;
     targetMeshRef: RefObject<THREE.Mesh | null>; // 그릴 대상 mesh 참조
-    currentPath: THREE.Vector3[]; // 현재 드로잉 중인 좌표 리스트
+    currentPath: THREE.Vector3[];
     setCurrentPath: Dispatch<SetStateAction<THREE.Vector3[]>>;
     setSavedLines: Dispatch<SetStateAction<THREE.Vector3[][]>>;
 }
 
-/**
- * 3D CylinderRef의 표면 위에서 마우스 드로잉을 통해 폐곡선을 형성하는 기능
- */
 export const usePointerAction = ({drawMode, drawing, setDrawing, targetMeshRef, currentPath, setCurrentPath, setSavedLines}: Props) => {
 
     const { camera, gl } = useThree();
@@ -43,8 +40,7 @@ export const usePointerAction = ({drawMode, drawing, setDrawing, targetMeshRef, 
     }
 
     /**
-     * drawMode = true일때만 동작
-     * 클릭한 지점을 시작점으로 설정 후 드로잉 시작(drawing = true)
+     * 클릭한 지점을 시작점으로 설정 후 드로잉 시작
      */
     const handlePointerDown = (e: ThreeEvent<PointerEvent>):void => {
         if(!drawMode){
@@ -59,7 +55,6 @@ export const usePointerAction = ({drawMode, drawing, setDrawing, targetMeshRef, 
     }
 
     /**
-     * drawMode = true일때만 동작
      * 마우스를 움직이는 동안 표면 위 좌표를 실시간으로 추가해 현재 경로 업데이트
      */
     const handlePointerMove = (e: ThreeEvent<PointerEvent>):void => {
@@ -74,9 +69,8 @@ export const usePointerAction = ({drawMode, drawing, setDrawing, targetMeshRef, 
     }
 
     /**
-     * 드로잉 종료 시 호출
      * 현재 경로가 폐곡선을 이루는지 판단하고, 폐곡선이면 setSavedLines에 저장
-     * 교차점이 있는 경우 extractClosedPathFromSelfIntersection()로 실제 폐곡선 부분만 추출
+     * 교차점이 있는 경우 실제 폐곡선 부분만 추출
      */
     const handlePointerUp = ():void => {
         if(!drawing || !drawMode){

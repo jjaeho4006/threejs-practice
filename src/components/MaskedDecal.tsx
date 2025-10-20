@@ -135,13 +135,13 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh, textureWidth,
                 uniform vec2 uvScale;
                 uniform float tileScaleX;
                 uniform float tileScaleY;
-                uniform float edgePadding; // 이미지 테두리 여백
+                uniform float edgePadding;
                 
                 varying vec2 vUv;
                 varying vec3 vPosition;
                 
-                // 3D 좌표를 원통 좌표계로 변환해서 UV로 매핑하는 함수
-                vec2 toUV_Cylinder(vec3 pos) {
+                // 3D 좌표를 원통 좌표계로 변환해서 UV로 매핑
+                vec2 toUV_Cylinder(vec3 pos){
                     float cylinderHeight = 100.0;
                     float theta = atan(pos.x, pos.z);
                     float u = (theta + 3.14159265) / (2.0 * 3.14159265);
@@ -167,10 +167,8 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh, textureWidth,
                         discard;
                     }
                     
-                    // X, Y 각각 다른 타일 스케일 적용
                     vec2 tiledUV = fract(vec2(maskUV.x * tileScaleX, maskUV.y * tileScaleY));
                     
-                    // 이미지 여백 제거(edgePadding 값 으로 조정)
                     if (edgePadding > 0.0) {
                         tiledUV = tiledUV * (1.0 - 2.0 * edgePadding) + edgePadding;
                     }

@@ -23,15 +23,3 @@ export const getMaxDiameter = (points: THREE.Vector3[]) => {
     }
     return maxDistance;
 };
-
-export const getSvgSize = async(url: string): Promise<{width: number; height: number}> => {
-    const response = await fetch(url);
-    const text = await response.text();
-    const widthMatch = text.match(/width="([\d.]+)(px)?"/);
-    const heightMatch = text.match(/height="([\d.]+)(px)?"/);
-    return {
-        width: parseFloat(widthMatch?.[1] ?? "1"),
-        height: parseFloat(heightMatch?.[1] ?? "1")
-    };
-
-}
