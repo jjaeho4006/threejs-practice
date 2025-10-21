@@ -4,7 +4,7 @@ import { hatch18, hatch30, hatch36, hatch42, hatch48 } from "./assets/images/ima
 import { useState } from "react";
 import type {DropDataType} from "./type/type";
 import {useDragAction} from "./hooks/useDragAction.ts";
-import {OrbitControls} from "@react-three/drei";
+import {OrbitControls, Stats} from "@react-three/drei";
 
 const images = [hatch18, hatch30, hatch36, hatch42, hatch48];
 
@@ -62,6 +62,10 @@ export default function App() {
                         newDrop={newDrop ?? undefined}
                         drawMode={drawMode}
                     />
+
+                    {/*FPS 표시기*/}
+                    <Stats/>
+
                     {/* 마우스 컨트롤 */}
                     {!drawMode && <OrbitControls enableZoom enablePan enableRotate enableDamping/>}
                 </Canvas>

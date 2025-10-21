@@ -13,13 +13,11 @@ export const loadTextureHighRes = (url: string, resolution: number = 2048) : Pro
 
             const img = new Image();
             img.onload = () => {
-                // 배경을 투명하게
-                ctx?.clearRect(0, 0, resolution, resolution);
-                // 고해상도로 SVG 렌더링
-                ctx?.drawImage(img, 0,0, resolution, resolution);
+                ctx?.clearRect(0, 0, resolution, resolution); // 배경을 투명하게
+                ctx?.drawImage(img, 0,0, resolution, resolution); // 고해상도로 SVG 렌더링
 
                 const texture = new THREE.CanvasTexture(canvas);
-                texture.needsUpdate = true;
+                texture.needsUpdate = true; // texture을 업데이트해서 로드된 이미지를 넣어줌
                 texture.premultiplyAlpha = false;
                 resolve(texture);
             }
@@ -27,7 +25,7 @@ export const loadTextureHighRes = (url: string, resolution: number = 2048) : Pro
             img.src = url;
         }
         else{
-            // 일반 이미지
+            // svg 이외의 일반 이미지
             const loader = new THREE.TextureLoader();
             loader.load(url, resolve, undefined, reject)
         }

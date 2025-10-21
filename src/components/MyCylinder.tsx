@@ -128,7 +128,7 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
 
             {savedLines.map((path, idx) => (
                 <Line
-                    key={idx}
+                    key={`saved-line-${idx}`}
                     points={path}
                     color="black"
                     lineWidth={0.5}
@@ -137,7 +137,7 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
 
             {/* 폐곡선 외부에 드롭된 개별 decal */}
             {decals.map((d, idx) => (
-                <DecalItem key={idx} decal={d} meshRef={cylinderRef} />
+                <DecalItem key={`decal-item-${idx}`} decal={d} meshRef={cylinderRef} />
             ))}
 
             {/* 폐곡선 내부에 드롭된 masking decal */}
@@ -146,7 +146,7 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
                 if (!path) {
                     return null;
                 }
-                return <MaskedDecal key={index} currentPath={path} textureUrl={texture} targetMesh={cylinderRef.current!} textureWidth={41} textureHeight={24}/>
+                return <MaskedDecal key={`masking-decal-${index}`} currentPath={path} textureUrl={texture} targetMesh={cylinderRef.current!} textureWidth={41} textureHeight={24}/>
             })}
         </>
     );
