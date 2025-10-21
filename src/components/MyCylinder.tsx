@@ -8,6 +8,7 @@ import {usePointerAction} from "../hooks/usePointerAction.ts";
 import {alignUvsToAnchor, toUV_Cylinder} from "../utils/toUV.ts";
 import {MaskedDecal} from "./MaskedDecal.tsx";
 import {pointInPolygon} from "../utils/polygonUtils.ts";
+import {getSvgSize} from "../utils/getSvgSize.ts";
 
 interface Props {
     newDrop?: DropDataType;
@@ -26,7 +27,7 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
     const [savedLines, setSavedLines] = useState<THREE.Vector3[][]>([]); // 사용자가 그린 모든 경로(저장된 선들)
     const [decals, setDecals] = useState<DecalDataType[]>([]); // 원통에 붙일 디칼(개별 이미지 스티커) 리스트
     const [drawing, setDrawing] = useState<boolean>(false);
-    const [dropTextures, setDropTextures] = useState<{pathIdx: number; texture: string}[]>([]) // 드롭된 텍스처와 연결된 경로 인덱스
+    const [dropTextures, setDropTextures] = useState<{pathIdx: number; texture: string; width: number; height: number}[]>([]) // 드롭된 텍스처와 연결된 경로 인덱스
     const { camera } = useThree();
 
     const {handlePointerMove, handlePointerUp, handlePointerDown} = usePointerAction({drawMode, drawing, setDrawing, targetMeshRef:cylinderRef, currentPath, setCurrentPath, setSavedLines})
@@ -81,7 +82,19 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
 
         // 드롭이 폐곡선 내부에 있으면 해당 경로에 texture 매핑
         if(matchedIdx !== null){
-            setDropTextures((prev) => [...prev, {pathIdx: matchedIdx, texture: newDrop.texture}])
+            (async() => {
+                let width = 41;
+                let height = 24;
+                if(newDrop.texture.endsWith('.svg')){
+                    const svgSize = await getSvgSize(newDrop.texture);
+                    if(svgSize){
+                        width = svgSize.width;
+                        height = svgSize.height;
+                    }
+                }
+                setDropTextures((prev) => [...prev, {pathIdx: matchedIdx, texture: newDrop.texture, width, height}])
+            })()
+
             return;
         }
 
@@ -141,12 +154,12 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
             ))}
 
             {/* 폐곡선 내부에 드롭된 masking decal */}
-            {dropTextures.map(({ pathIdx, texture }, index) => {
+            {dropTextures.map(({ pathIdx, texture, width, height }, index) => {
                 const path = savedLines[pathIdx];
                 if (!path) {
                     return null;
                 }
-                return <MaskedDecal key={`masking-decal-${index}`} currentPath={path} textureUrl={texture} targetMesh={cylinderRef.current!} textureWidth={41} textureHeight={24}/>
+                return <MaskedDecal key={`masking-decal-${index}`} currentPath={path} textureUrl={texture} targetMesh={cylinderRef.current!} textureWidth={width} textureHeight={height}/>
             })}
         </>
     );

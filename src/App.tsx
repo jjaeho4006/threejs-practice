@@ -64,14 +64,12 @@ export default function App() {
                     />
 
                     {/*FPS 표시기*/}
-                    <Stats/>
+                    {process.env.NODE_ENV === 'development' && <Stats/>}
 
                     {/* 마우스 컨트롤 */}
                     {!drawMode && <OrbitControls enableZoom enablePan enableRotate enableDamping/>}
                 </Canvas>
-
             </div>
-
         </div>
     );
 }

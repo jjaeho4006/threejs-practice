@@ -18,8 +18,6 @@ export const DecalItem = ({ decal, meshRef }: DecalItemProps) => {
             texture.magFilter = THREE.LinearFilter;
             texture.generateMipmaps = true;
             texture.anisotropy = 4;
-            texture.wrapT = THREE.ClampToEdgeWrapping;
-            texture.wrapS = THREE.ClampToEdgeWrapping;
             texture.needsUpdate = true;
 
             setBaseTexture(texture);

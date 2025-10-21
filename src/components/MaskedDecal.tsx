@@ -107,84 +107,103 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh, textureWidth,
         maskTexture.needsUpdate = true;
 
         const material = new THREE.ShaderMaterial({
+            // uniforms : 외부에서 전달되는 값
             uniforms: {
-                baseTexture: { value: baseTexture },
-                maskTexture: { value: maskTexture },
-                uvOffset: { value: new THREE.Vector2(minU, minV) },
-                uvScale: { value: new THREE.Vector2(maxU - minU, maxV - minV) },
-                tileScaleX: { value: tilesX },
-                tileScaleY: { value: tilesY },
-                imgAspect: { value: textureWidth / textureHeight },
-                edgePadding: { value: 0.005 }
+                baseTexture: { value: baseTexture }, // 실제 표시될 텍스처(이미지)
+                maskTexture: { value: maskTexture }, // 마스크 텍스처(폴리곤 영역 정의)
+                uvOffset: { value: new THREE.Vector2(minU, minV) }, // 마스크 좌표 시작점(0 ~ 1 UV 기준)
+                uvScale: { value: new THREE.Vector2(maxU - minU, maxV - minV) }, // 마스크 영역 크기 (UV 기준)
+                tileScaleX: { value: tilesX }, // 텍스처 반복 횟수 X 방향
+                tileScaleY: { value: tilesY }, // 텍스처 반복 횟수 Y 방향
+                imgAspect: { value: textureWidth / textureHeight }, // 이미지 가로 / 세로 비율
+                edgePadding: { value: 0.017} // 텍스처 테두리 여백, 반복 시 깨짐 방지
             },
             vertexShader: `
-                // 각 정점의 좌표와 UV를 fragment shader 넘김
-                varying vec2 vUv;
-                varying vec3 vPosition;
+                // varying : Vertex Shader -> Fragment Shader로 값 전달
+                varying vec2 vUv;       // 모델 UV 좌표
+                varying vec3 vPosition; // 모델 공간 상 정점 좌표
                 
                 void main() {
+                    // geometry의 UV 값을 Fragment Shader로 전달
                     vUv = uv;
+                    
+                    // 모델 좌표(position)를 Fragment Shader로 전달
                     vPosition = position;
+                    
+                    // gl_Position : 화면에 렌더링 될 좌표
                     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
                 }
             `,
             fragmentShader: `
                 uniform sampler2D baseTexture;
                 uniform sampler2D maskTexture;
-                uniform vec2 uvOffset;
-                uniform vec2 uvScale;
+                uniform vec2 uvOffset; // 마스크 UV 시작점
+                uniform vec2 uvScale;  // 마스크 UV 크기
                 uniform float tileScaleX;
                 uniform float tileScaleY;
                 uniform float edgePadding;
                 
+                // Vertex Shader에서 전달된 값
                 varying vec2 vUv;
                 varying vec3 vPosition;
                 
-                // 3D 좌표를 원통 좌표계로 변환해서 UV로 매핑
+                // Cylinder mapping 함수 : 3D 모델 좌표 -> 2D UV 변환
                 vec2 toUV_Cylinder(vec3 pos){
-                    float cylinderHeight = 100.0;
+                    float cylinderHeight = 100.0; // 원통 높이 기준 (y축 방향)
+                    
+                    // x-z 평면에서 각도 계산
                     float theta = atan(pos.x, pos.z);
+                    
+                    // u 좌표 : 0 ~ 1 범위로 정규화
                     float u = (theta + 3.14159265) / (2.0 * 3.14159265);
+                    
+                    // v 좌표 : y 좌표를 원통 높이 기준으로 정규화
                     float v = (pos.y + cylinderHeight / 2.0) / cylinderHeight;
-                    return vec2(u, v);
+                    
+                    return vec2(u, v); // UV 좌표 반환
                 }
                 
                 void main() {
+                    // 모델 좌표 -> 원통 UV 변환
                     vec2 cylinderUV = toUV_Cylinder(vPosition);
                     
-                    // mask texture 좌표 계산
+                    // 마스크 텍스처 좌표 계산
+                    // 마스크 영역만 0 ~ 1 범위로 매핑
                     vec2 maskUV = (cylinderUV - uvOffset) / uvScale;
                     
+                    // UV 범위를 벗어나면 해당 픽셀 그리지 않음
                     if (maskUV.x < 0.0 || maskUV.x > 1.0 || maskUV.y < 0.0 || maskUV.y > 1.0) {
                         discard;
                     }
                     
-                    // mask sampling(polygon 내부만 허용)
+                    // 마스크 샘플링
                     vec4 maskColor = texture2D(maskTexture, maskUV);
                     
-                    // mask가 검은색이면 버림
+                    // maskColor.r < 0.5 : 검은 영역 -> 픽셀 제거
                     if (maskColor.r < 0.5) {
                         discard;
                     }
                     
+                    // baseTexture 타일링 처리
                     vec2 tiledUV = fract(vec2(maskUV.x * tileScaleX, maskUV.y * tileScaleY));
                     
+                    // 테두리 여백 처리
                     if (edgePadding > 0.0) {
                         tiledUV = tiledUV * (1.0 - 2.0 * edgePadding) + edgePadding;
                     }
                     
-                    // base texture sampling
+                    // baseTexture 샘플링
                     vec4 baseColor = texture2D(baseTexture, tiledUV);
                     
                     // fragment(pixel)의 최종 색상 지정
                     gl_FragColor = vec4(baseColor.rgb, baseColor.a);
                 }
             `,
-            transparent: true,
-            depthTest: true,
-            depthWrite: false,
-            side: THREE.DoubleSide,
-            polygonOffset: true,
+            transparent: true, // alpha 값을 고려해서 투명 처리
+            depthTest: true, // 깊이 테스트 사용
+            depthWrite: false, // depth buffer에 기록 안함 -> 겹치는 투명 픽셀 문제 방지
+            side: THREE.DoubleSide, // 앞 / 뒤 면 모두 렌더링
+            polygonOffset: true, // Z-fighting 방지
             polygonOffsetFactor: -1,
             polygonOffsetUnits: -4
         });
