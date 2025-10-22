@@ -17,7 +17,7 @@ export const DecalItem = ({ decal, meshRef }: DecalItemProps) => {
             texture.minFilter = THREE.LinearMipmapLinearFilter;
             texture.magFilter = THREE.LinearFilter;
             texture.generateMipmaps = true;
-            texture.anisotropy = 4;
+            texture.anisotropy = 8;
             texture.needsUpdate = true;
 
             setBaseTexture(texture);

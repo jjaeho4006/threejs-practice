@@ -125,29 +125,14 @@ export const MyCylinder = ({ newDrop, drawMode, isTransparent }: Props) => {
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
-                renderOrder={-1}
+                renderOrder={0}
             >
-                <cylinderGeometry args={[50, 50, 100, 70, 1]}/>
+                <cylinderGeometry args={[50, 50, 100, 70, 1, isTransparent]} />
                 <meshStandardMaterial
-                    attach="material-0"
                     color="white"
                     transparent={isTransparent}
-                    opacity={isTransparent ? 0.1 : 1}
-                    depthWrite={false}
-                />
-                <meshStandardMaterial
-                    attach="material-1"
-                    color="lightgray"
-                    transparent={isTransparent}
-                    opacity={isTransparent ? 0.1 : 1}
-                    depthWrite={false}
-                />
-                <meshStandardMaterial
-                    attach="material-2"
-                    color="lightgray"
-                    transparent={isTransparent}
-                    opacity={isTransparent ? 0.1 : 1}
-                    depthWrite={false}
+                    opacity={isTransparent ? 0.3 : 1}
+                    side={THREE.DoubleSide} // 양면 투명
                 />
             </mesh>
 

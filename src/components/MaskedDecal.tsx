@@ -24,7 +24,7 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh, textureWidth,
             texture.minFilter = THREE.LinearMipmapLinearFilter;
             texture.magFilter = THREE.LinearFilter;
             texture.generateMipmaps = true
-            texture.anisotropy = 4;
+            texture.anisotropy = 8;
             setBaseTexture(texture);
         })
 
@@ -79,10 +79,14 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh, textureWidth,
 
         // mask texture 생성(canvas에 정확히 fill)
         const canvas = document.createElement('canvas');
-        const size = 512;
+        const size = 1024;
         canvas.width = size;
         canvas.height = size;
         const ctx = canvas.getContext('2d')!;
+
+        // 고품질 렌더링 설정
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
 
         // 배경 검은색
         ctx.fillStyle = 'black';
@@ -104,19 +108,22 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh, textureWidth,
         ctx.fill();
 
         const maskTexture = new THREE.CanvasTexture(canvas);
+        maskTexture.minFilter = THREE.LinearMipmapLinearFilter;
+        maskTexture.magFilter = THREE.LinearFilter;
+        maskTexture.generateMipmaps = true;
         maskTexture.needsUpdate = true;
 
         const material = new THREE.ShaderMaterial({
             // uniforms : 외부에서 전달되는 값
             uniforms: {
-                baseTexture: { value: baseTexture }, // 실제 표시될 텍스처(이미지)
+                baseTexture: { value: baseTexture },
                 maskTexture: { value: maskTexture }, // 마스크 텍스처(폴리곤 영역 정의)
                 uvOffset: { value: new THREE.Vector2(minU, minV) }, // 마스크 좌표 시작점(0 ~ 1 UV 기준)
                 uvScale: { value: new THREE.Vector2(maxU - minU, maxV - minV) }, // 마스크 영역 크기 (UV 기준)
-                tileScaleX: { value: tilesX }, // 텍스처 반복 횟수 X 방향
-                tileScaleY: { value: tilesY }, // 텍스처 반복 횟수 Y 방향
-                imgAspect: { value: textureWidth / textureHeight }, // 이미지 가로 / 세로 비율
-                edgePadding: { value: 0.005} // 텍스처 테두리 여백, 반복 시 깨짐 방지
+                tileScaleX: { value: tilesX },
+                tileScaleY: { value: tilesY },
+                imgAspect: { value: textureWidth / textureHeight },
+                edgePadding: { value: 0.0095}
             },
             vertexShader: `
                 // varying : Vertex Shader -> Fragment Shader로 값 전달
@@ -143,13 +150,13 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh, textureWidth,
                 uniform float tileScaleY;
                 uniform float edgePadding;
                 
-                // Vertex Shader에서 전달된 값
+                // Vertex Shader 에서 전달된 값
                 varying vec2 vUv;
                 varying vec3 vPosition;
                 
                 // Cylinder mapping 함수 : 3D 모델 좌표 -> 2D UV 변환
                 vec2 toUV_Cylinder(vec3 pos){
-                    float cylinderHeight = 100.0; // 원통 높이 기준 (y축 방향)
+                    float cylinderHeight = 100.0;
                     
                     // x-z 평면에서 각도 계산
                     float theta = atan(pos.x, pos.z);
@@ -208,8 +215,22 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh, textureWidth,
             polygonOffsetUnits: -4
         });
 
-        return { decalGeometry: geometry, decalMaterial: material };
+        return { decalGeometry: geometry, decalMaterial: material, maskTexture };
     }, [baseTexture, currentPath, targetMesh, textureHeight, textureWidth]);
+
+    useEffect(() => {
+        return () => {
+            if (decalData?.maskTexture) {
+                decalData.maskTexture.dispose();
+            }
+            if (decalData?.decalGeometry) {
+                decalData.decalGeometry.dispose();
+            }
+            if (decalData?.decalMaterial) {
+                decalData.decalMaterial.dispose();
+            }
+        };
+    }, [decalData]);
 
     if (!decalData) return null;
 
