@@ -116,7 +116,7 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh, textureWidth,
                 tileScaleX: { value: tilesX }, // 텍스처 반복 횟수 X 방향
                 tileScaleY: { value: tilesY }, // 텍스처 반복 횟수 Y 방향
                 imgAspect: { value: textureWidth / textureHeight }, // 이미지 가로 / 세로 비율
-                edgePadding: { value: 0.017} // 텍스처 테두리 여백, 반복 시 깨짐 방지
+                edgePadding: { value: 0.005} // 텍스처 테두리 여백, 반복 시 깨짐 방지
             },
             vertexShader: `
                 // varying : Vertex Shader -> Fragment Shader로 값 전달

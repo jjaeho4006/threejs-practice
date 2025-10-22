@@ -9,7 +9,7 @@ export const loadTextureHighRes = (url: string, resolution: number = 2048) : Pro
             const canvas = document.createElement('canvas');
             canvas.width = resolution;
             canvas.height = resolution;
-            const ctx = canvas.getContext('2d', { willReadFrequently: false, alpha: true, });
+            const ctx = canvas.getContext('2d', { willReadFrequently: false, alpha: true });
 
             const img = new Image();
             img.onload = () => {

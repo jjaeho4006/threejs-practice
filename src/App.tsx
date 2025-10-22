@@ -59,7 +59,7 @@ export default function App() {
             <div style={{ flex: 1, width: "100%" }}>
                 <Canvas camera={{ position: [0, 0, 250], fov: 40 }} >
                     {/*환경광: Scene 전체에 균일하게 적용되는 빛*/}
-                    <ambientLight intensity={3} />
+                    <ambientLight intensity={2.5} />
 
                     {/*점광원: 전구처럼 한 점에서 사방으로 퍼지는 빛 */}
                     <pointLight position={[50, 50, 50]} />
