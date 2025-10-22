@@ -87,7 +87,7 @@ export const MyCylinder = ({ newDrop, drawMode, isTransparent }: Props) => {
             (async() => {
                 let width = 41;
                 let height = 24;
-                if(newDrop.texture.endsWith('.svg')){
+                if(newDrop.texture.includes('.svg')){
                     const svgSize = await getSvgSize(newDrop.texture);
                     if(svgSize){
                         width = svgSize.width;

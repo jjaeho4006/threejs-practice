@@ -3,8 +3,7 @@ import * as THREE from 'three';
 export const loadTextureHighRes = (url: string, resolution: number = 2048) : Promise<THREE.Texture> => {
 
     return new Promise((resolve, reject) => {
-        const isSVG = url.endsWith('.svg');
-
+        const isSVG = url.includes('.svg');
         if(isSVG){
             const canvas = document.createElement('canvas');
             canvas.width = resolution;

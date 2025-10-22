@@ -49,7 +49,7 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh, textureWidth,
             targetMesh,
             center,
             decalEuler,
-            new THREE.Vector3(diameter, diameter, diameter)
+            new THREE.Vector3(diameter * 1.2, diameter * 1.2, diameter * 1.2)
         );
 
         // 폐곡선을 UV 좌표로 변환
@@ -123,7 +123,7 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh, textureWidth,
                 tileScaleX: { value: tilesX },
                 tileScaleY: { value: tilesY },
                 imgAspect: { value: textureWidth / textureHeight },
-                edgePadding: { value: 0.0095}
+                edgePadding: { value: 0.008}
             },
             vertexShader: `
                 // varying : Vertex Shader -> Fragment Shader로 값 전달
@@ -215,22 +215,8 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh, textureWidth,
             polygonOffsetUnits: -4
         });
 
-        return { decalGeometry: geometry, decalMaterial: material, maskTexture };
+        return { decalGeometry: geometry, decalMaterial: material };
     }, [baseTexture, currentPath, targetMesh, textureHeight, textureWidth]);
-
-    useEffect(() => {
-        return () => {
-            if (decalData?.maskTexture) {
-                decalData.maskTexture.dispose();
-            }
-            if (decalData?.decalGeometry) {
-                decalData.decalGeometry.dispose();
-            }
-            if (decalData?.decalMaterial) {
-                decalData.decalMaterial.dispose();
-            }
-        };
-    }, [decalData]);
 
     if (!decalData) return null;
 
