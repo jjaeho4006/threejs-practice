@@ -13,6 +13,7 @@ import {getSvgSize} from "../utils/getSvgSize.ts";
 interface Props {
     newDrop?: DropDataType;
     drawMode: boolean;
+    isTransparent: boolean;
 }
 
 /**
@@ -20,8 +21,9 @@ interface Props {
  * 사용자가 원통 위에 선(line)을 그리고, 해당 영역 안에 드롭이 발생하면 그 영역에 텍스처를 표시
  * @param newDrop 새로 드롭된 텍스처 데이터
  * @param drawMode 그리기 모드 여부
+ * @param isTransparent 투명화 여부
  */
-export const MyCylinder = ({ newDrop, drawMode }: Props) => {
+export const MyCylinder = ({ newDrop, drawMode, isTransparent }: Props) => {
     const cylinderRef = useRef<THREE.Mesh | null>(null); //  3D 객체(원통)의 참조
     const [currentPath, setCurrentPath] = useState<THREE.Vector3[]>([]); // 현재 드로잉 중인 라인의 점들(Vector3 배열)
     const [savedLines, setSavedLines] = useState<THREE.Vector3[][]>([]); // 사용자가 그린 모든 경로(저장된 선들)
@@ -123,12 +125,30 @@ export const MyCylinder = ({ newDrop, drawMode }: Props) => {
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
-                renderOrder={0}
+                renderOrder={-1}
             >
                 <cylinderGeometry args={[50, 50, 100, 70, 1]}/>
-                <meshStandardMaterial attach="material-0" color="white" />
-                <meshStandardMaterial attach="material-1" color="lightgray" />
-                <meshStandardMaterial attach="material-2" color="lightgray" />
+                <meshStandardMaterial
+                    attach="material-0"
+                    color="white"
+                    transparent={isTransparent}
+                    opacity={isTransparent ? 0.1 : 1}
+                    depthWrite={false}
+                />
+                <meshStandardMaterial
+                    attach="material-1"
+                    color="lightgray"
+                    transparent={isTransparent}
+                    opacity={isTransparent ? 0.1 : 1}
+                    depthWrite={false}
+                />
+                <meshStandardMaterial
+                    attach="material-2"
+                    color="lightgray"
+                    transparent={isTransparent}
+                    opacity={isTransparent ? 0.1 : 1}
+                    depthWrite={false}
+                />
             </mesh>
 
             {currentPath.length > 1 && (

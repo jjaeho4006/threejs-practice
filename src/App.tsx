@@ -11,6 +11,8 @@ const images = [hatch18, hatch30, hatch36, hatch42, hatch48];
 export default function App() {
     const [newDrop, setNewDrop] = useState<DropDataType | null>(null);
     const [drawMode, setDrawMode] = useState<boolean>(false);
+    const [isTransparent, setIsTransparent] = useState<boolean>(false);
+
 
     const {handleDrop, handleDragStart} = useDragAction({setNewDrop});
 
@@ -25,6 +27,9 @@ export default function App() {
                 onClick={() => setDrawMode(!drawMode)}
             >
                 {drawMode ? "드로잉 중" : "영역 그리기"}
+            </button>
+            <button onClick={() => setIsTransparent(!isTransparent)} style={{ width: "100px", height: "30px", cursor: "pointer", padding: "5px 15px", margin: "5px auto", backgroundColor: "#fff", border: "1px solid #888" }}>
+                {isTransparent ? "투명화 해제" : "투명화"}
             </button>
 
             <div style={{
@@ -54,13 +59,14 @@ export default function App() {
             <div style={{ flex: 1, width: "100%" }}>
                 <Canvas camera={{ position: [0, 0, 250], fov: 40 }} >
                     {/*환경광: Scene 전체에 균일하게 적용되는 빛*/}
-                    <ambientLight intensity={2.5} />
+                    <ambientLight intensity={3} />
 
                     {/*점광원: 전구처럼 한 점에서 사방으로 퍼지는 빛 */}
                     <pointLight position={[50, 50, 50]} />
                     <MyCylinder
                         newDrop={newDrop ?? undefined}
                         drawMode={drawMode}
+                        isTransparent={isTransparent}
                     />
 
                     {/*FPS 표시기*/}

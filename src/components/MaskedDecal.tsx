@@ -44,10 +44,11 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh, textureWidth,
         const diameter = getMaxDiameter(currentPath);
 
         // DecalGeometry 생성
+        const decalEuler = new THREE.Euler(0, 0, 0);
         const geometry = new DecalGeometry(
             targetMesh,
             center,
-            new THREE.Euler(0, 0, 0),
+            decalEuler,
             new THREE.Vector3(diameter, diameter, diameter)
         );
 
@@ -73,11 +74,10 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh, textureWidth,
         const worldHeight = uvHeight * cylinderHeight;
 
         const baseSize = 0.1;
-
         const tilesX = worldWidth / (textureWidth * baseSize);
         const tilesY = worldHeight / (textureHeight * baseSize);
 
-        // mask texture 생성
+        // mask texture 생성(canvas에 정확히 fill)
         const canvas = document.createElement('canvas');
         const size = 512;
         canvas.width = size;
@@ -88,7 +88,7 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh, textureWidth,
         ctx.fillStyle = 'black';
         ctx.fillRect(0, 0, size, size);
 
-        // 폐곡선 영역 흰색으로 채우기
+        // 폐곡선 영역 흰색으로 채우기(closePath 후 fill)
         ctx.fillStyle = 'white';
         ctx.beginPath();
         alignedPathUVs.forEach((uv, i) => {
