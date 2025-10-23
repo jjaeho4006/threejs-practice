@@ -58,8 +58,22 @@ export const MyCylinder = ({ newDrop, drawMode, isTransparent }: Props) => {
 
         // 첫번째 교차점만 사용
         const intersect = intersects[0];
-        const localPos = cylinderRef.current.worldToLocal(intersect.point.clone());
 
+        // -- 새로 추가
+        // 법선 방향이 카메라를 향하고 있는지 체크 - 반대편 면에 찍히는 문제 방지
+        const normal = intersect.face?.normal.clone().applyMatrix3(
+            new THREE.Matrix3().getNormalMatrix(cylinderRef.current.matrixWorld)
+        )
+
+        const cameraDir = new THREE.Vector3().subVectors(camera.position, intersect.point).normalize();
+
+        // -- 여기까지
+        // normal이 카메라를 등지고 있으면 decal 생성 X
+        if(normal && normal.dot(cameraDir) < 0){
+            return;
+        }
+
+        const localPos = cylinderRef.current.worldToLocal(intersect.point.clone());
         const dropUV = toUV_Cylinder(localPos); // drop 위치를 UV로 변환
 
         let matchedIdx: number | null = null;

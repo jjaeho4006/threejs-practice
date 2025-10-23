@@ -1,9 +1,11 @@
 import * as THREE from "three";
+import {ArrowHelper} from "three";
 import {useEffect, useMemo, useState} from "react";
-import { DecalGeometry } from "three/examples/jsm/geometries/DecalGeometry";
+import {DecalGeometry} from "three/examples/jsm/geometries/DecalGeometry";
 import {alignUvsToAnchor, toUV_Cylinder} from "../utils/toUV.ts";
 import {getCenterOfPath, getMaxDiameter} from "../utils/decalUtils.ts";
 import {loadTextureHighRes} from "../utils/loadTextureHighRes.ts";
+import {getSurfaceNormal} from "../utils/getSurfaceNormal.ts";
 
 interface MaskedDecalProps {
     currentPath: THREE.Vector3[];
@@ -43,13 +45,26 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh, textureWidth,
         const center = getCenterOfPath(currentPath);
         const diameter = getMaxDiameter(currentPath);
 
+        // -- 새로 추가
+        // 중심 위치 기준으로 mesh 표면 normal 계산
+        const surfaceNormal = getSurfaceNormal(targetMesh, center);
+
+        // Decal이 기존과 같은 방향인지, 반대편인지 판별
+        const viewDir = new THREE.Vector3(0, 0, 1) // 카메라가 정면에서 본다고 가정
+        const isBackSide = surfaceNormal.dot(viewDir) < 0;
+
+        // -- 여기까지
+        // Decal 투영 방향 Quaternion/Euler 생성
+        const orientation = new THREE.Quaternion();
+        orientation.setFromUnitVectors(new THREE.Vector3(0, 0, 1), isBackSide ? surfaceNormal.clone().negate() : surfaceNormal);
+
         // DecalGeometry 생성
         const decalEuler = new THREE.Euler(0, 0, 0);
         const geometry = new DecalGeometry(
             targetMesh,
             center,
             decalEuler,
-            new THREE.Vector3(diameter * 1.2, diameter * 1.2, diameter * 1.2)
+            new THREE.Vector3(diameter * 1.3, diameter * 1.3, diameter * 1.3)
         );
 
         // 폐곡선을 UV 좌표로 변환
@@ -114,7 +129,7 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh, textureWidth,
         maskTexture.needsUpdate = true;
 
         const material = new THREE.ShaderMaterial({
-            // uniforms : 외부에서 전달되는 값
+            // uniforms : Three.js에서 전달되는 값
             uniforms: {
                 baseTexture: { value: baseTexture },
                 maskTexture: { value: maskTexture }, // 마스크 텍스처(폴리곤 영역 정의)
@@ -209,7 +224,7 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh, textureWidth,
             transparent: true, // alpha 값을 고려해서 투명 처리
             depthTest: true, // 깊이 테스트 사용
             depthWrite: false, // depth buffer에 기록 안함 -> 겹치는 투명 픽셀 문제 방지
-            side: THREE.DoubleSide, // 앞 / 뒤 면 모두 렌더링
+            side: THREE.DoubleSide,
             polygonOffset: true, // Z-fighting 방지
             polygonOffsetFactor: -1,
             polygonOffsetUnits: -4
@@ -218,9 +233,34 @@ export const MaskedDecal = ({ currentPath, textureUrl, targetMesh, textureWidth,
         return { decalGeometry: geometry, decalMaterial: material };
     }, [baseTexture, currentPath, targetMesh, textureHeight, textureWidth]);
 
+    const arrowHelper = useMemo(() => {
+        if (!targetMesh || currentPath.length < 3) return null;
+
+        const center = getCenterOfPath(currentPath);
+        const surfaceNormal = getSurfaceNormal(targetMesh, center);
+
+        const viewDir = new THREE.Vector3(0, 0, 1);
+        const isBackSide = surfaceNormal.dot(viewDir) < 0;
+        const normalDir = isBackSide ? surfaceNormal.clone().negate() : surfaceNormal;
+
+        return new ArrowHelper(
+            normalDir, // 방향
+            center,    // 시작점
+            20,        // 화살표 길이
+            0xff0000,  // 색상
+            2,         // 머리 길이
+            1          // 머리 너비
+        );
+    }, [targetMesh, currentPath]);
+
     if (!decalData) return null;
 
     const { decalGeometry, decalMaterial } = decalData;
 
-    return <mesh geometry={decalGeometry} material={decalMaterial} renderOrder={3} />;
+    return (
+        <>
+            <mesh geometry={decalGeometry} material={decalMaterial} renderOrder={3} />
+            {arrowHelper && <primitive object={arrowHelper} />}
+        </>
+    )
 };
